@@ -3,7 +3,8 @@
 #################### DISCORD ####################
 from discord.ext.commands import (
     Bot,
-    Context
+    Context,
+    Group
 )
 
 ##################### COGS ######################
@@ -19,15 +20,16 @@ from Welcome import Welcome
 ############################################# GLOBAL ##############################################
 
 COGS = {
-    'birthday': Birthday,
-    'cleanup': CleanUp,
-    'emojidata': EmojiData,
-    'emojimanager': EmojiManager,
-    'poll': Poll,
-    'rolebyreaction': RoleByReaction,
-    'scheduler': Scheduler,
-    'welcome': Welcome
+    Birthday,
+    CleanUp,
+    EmojiData,
+    EmojiManager,
+    Poll,
+    RoleByReaction,
+    Scheduler,
+    Welcome
 }
+DICT_COG_NAMES = {cog.__name__.lower(): cog for cog in COGS}
 PREFIX = '!'
 TOKEN = 'NTczMTI4NTI1NzU0OTI1MDY2.XMmViA.CPKxKNW2gT7py5WoYmSosGCI7ic'
 
@@ -41,18 +43,28 @@ def load_cogs(client: Bot, cogs: list):
 def unload_cogs(client: Bot, cogs: list):
     [client.remove_cog(cog) for cog in cogs]
 
-def get_cogs(client: Bot):
-    return {name.lower(): cog for name, cog in client.cogs.items()}
-
-def get_cog_names(client: Bot):
-    return sorted([name.lower() for name in client.cogs.keys()])
+def get_commands(instance: 'Union[Bot, Group]'):
+    commands = list()
+    for command in instance.commands:
+        if isinstance(command, Group):
+            commands += get_commands(command)
+        else:
+            commands.append(command)
+    return commands
 
 ############################################# EVENTS ##############################################
 
 @bot.event
 async def on_ready():
+    cog_names = {name.lower() for name in bot.cogs.keys()}
+
+    print(f'Bot prefix: {PREFIX}')
     print(f'Logged in as {bot.user}')
-    print(f'{get_cogs(bot)}')
+    print(f'Loaded cogs: {", ".join(cog_names)}')
+    print(
+        f'{len(cog_names)} cogs and '
+        f'{len(get_commands(bot))} commands loaded'
+    )
 
 ############################################ COMMANDS #############################################
 
@@ -62,34 +74,63 @@ async def cog_group(ctx: Context):
 
 @cog_group.command(name='load')
 async def cog_load(ctx: Context, *, cog_names: str):
-    try:
-        cog_names = cog_names.split()
-        cogs = list()
-        for cog_name in cog_names:
-            cogs.append(COGS[cog_name])
-        load_cogs(bot, cogs)
-        print(f'{get_cogs(bot)}')
+    async with ctx.typing():
+        try:
+            names_cogs_map = {cog.__name__.lower(): cog for cog in COGS}
+            loaded_cog_names = [name.lower() for name in bot.cogs.keys()]
 
-    except KeyError:
-        await ctx.send(f'Error: {cog_name} not found.')
+            cog_names = cog_names.lower().split()
+
+            to_load = list()
+            for cog_name in cog_names:
+                if cog_name not in loaded_cog_names:
+                    to_load.append(names_cogs_map[cog_name])
+                else:
+                    await ctx.send(f'Error: {cog_name} already loaded.')
+                    return
+
+            load_cogs(bot, to_load)
+            await ctx.send(f'Successfully loaded {", ".join(cog_names)}')
+
+        except KeyError:
+            await ctx.send(f'Error: {cog_name} not found.')
 
 @cog_group.command(name='unload')
 async def cog_unload(ctx: Context, *, cog_names: str):
-    try:
-        cog_names = cog_names.split()
-        loaded_cogs = get_cogs(bot)
-        cogs = list()
-        for cog_name in cog_names:
-            cogs.append(loaded_cogs[cog_name])
-        unload_cogs(bot, cogs)
-        print(f'{get_cogs(bot)}')
+    async with ctx.typing():
+        try:
+            names_cogs_map = {cog.__name__.lower(): cog.__name__ for cog in COGS}
+            loaded_cog_names = [name.lower() for name in bot.cogs.keys()]
 
-    except KeyError:
-        await ctx.send(f'Error: {cog_name} not loaded.')
+            cog_names = cog_names.lower().split()
+
+            to_unload = list()
+            for cog_name in cog_names:
+                if cog_name in loaded_cog_names:
+                    to_unload.append(names_cogs_map[cog_name])
+                elif cog_name not in names_cogs_map.keys():
+                    raise KeyError
+                else:
+                    await ctx.send(f'Error: {cog_name} not loaded.')
+                    return
+
+            unload_cogs(bot, to_unload)
+            await ctx.send(f'Successfully unloaded {", ".join(cog_names)}')
+
+        except KeyError:
+            await ctx.send(f'Error: {cog_name} not found.')
 
 @cog_group.command(name='list')
 async def cog_list(ctx: Context):
-    await ctx.send(", ".join(get_cog_names(bot)))
+    async with ctx.typing():
+        cog_names = {name.lower() for name in bot.cogs.keys()}
+        await ctx.send(", ".join(cog_names))
+
+@bot.command(name='commands')
+async def bot_commands(ctx: Context):
+    async with ctx.typing():
+        command_names = [c.name for c in get_commands(bot)]
+        await ctx.send(", ".join(command_names))
 
 ############################################## MAIN ###############################################
 
