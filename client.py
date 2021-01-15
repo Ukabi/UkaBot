@@ -17,8 +17,15 @@ from RoleByReaction import RoleByReaction
 from Scheduler import Scheduler
 from Welcome import Welcome
 
+##################### UTILS #####################
+from utils import (
+    load,
+    write
+)
+
 ############################################# GLOBAL ##############################################
 
+COG_PATH = 'cogs.json'
 COGS = {
     Birthday,
     CleanUp,
@@ -55,13 +62,18 @@ def get_commands(instance: 'Union[Bot, Group]'):
 
 @bot.event
 async def on_ready():
-    cog_names = {name.lower() for name in bot.cogs.keys()}
+    names_cogs_map = {cog.__name__.lower(): cog for cog in COGS}
+    cog_names_to_load = load(COG_PATH)
+    cogs_to_load = [names_cogs_map[cog_name] for cog_name in cog_names_to_load]
+    load_cogs(bot, cogs_to_load)
+
+    loaded_cogs_names = {name.lower() for name in bot.cogs.keys()}
 
     print(f'Bot prefix: {PREFIX}')
     print(f'Logged in as {bot.user}')
-    print(f'Loaded cogs: {", ".join(cog_names)}')
+    print(f'Loaded cogs: {", ".join(loaded_cogs_names)}')
     print(
-        f'{len(cog_names)} cogs and '
+        f'{len(loaded_cogs_names)} cogs and '
         f'{len(get_commands(bot))} commands loaded'
     )
 
@@ -89,6 +101,7 @@ async def cog_load(ctx: Context, *, cog_names: str):
                     return
 
             load_cogs(bot, to_load)
+            write(COG_PATH, load(COG_PATH) + cog_names)
             await ctx.send(f'Successfully loaded {", ".join(cog_names)}')
 
         except KeyError:
@@ -114,6 +127,7 @@ async def cog_unload(ctx: Context, *, cog_names: str):
                     return
 
             unload_cogs(bot, to_unload)
+            write(COG_PATH, [cog_name for cog_name in load(COG_PATH) if cog_name not in cog_names])
             await ctx.send(f'Successfully unloaded {", ".join(cog_names)}')
 
         except KeyError:
