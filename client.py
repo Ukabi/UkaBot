@@ -29,7 +29,6 @@ COGS = {
     Scheduler,
     Welcome
 }
-DICT_COG_NAMES = {cog.__name__.lower(): cog for cog in COGS}
 PREFIX = '!'
 TOKEN = 'NTczMTI4NTI1NzU0OTI1MDY2.XMmViA.CPKxKNW2gT7py5WoYmSosGCI7ic'
 
