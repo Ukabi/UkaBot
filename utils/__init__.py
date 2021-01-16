@@ -11,7 +11,11 @@ from discord.abc import GuildChannel
 import json
 import os
 import errno
-from typing import Union
+from typing import (
+    Any,
+    List,
+    Union
+)
 
 ############################################ FUNCTIONS ############################################
 
@@ -33,7 +37,7 @@ def safe_open(
         newline: str,
         closefd: bool,
         opener: callable
-    ):
+    ) -> open:
     mkdir_p(os.path.dirname(path))
     return open(
         path,
@@ -46,7 +50,7 @@ def safe_open(
         opener=opener
     )
 
-def load(path: str, iferror: Union[list, dict] = []):
+def load(path: str, iferror: Union[list, dict] = []) -> Union[list, dict]:
     try:
         with open(path, 'r') as file:
             return json.load(file)
@@ -59,18 +63,37 @@ def write(path, data: Union[list, dict]):
     with safe_open(path, 'w') as file:
         file.write(json.dumps(data))
 
+def dictify(obj: Union[List[Objectify], Objectify, Any]) -> Union[list, dict]:
+    if isinstance(obj, (list, tuple, set)):
+        return [dictify(x) for x in obj]
+    else:
+        d = dict()
+        for key, val in obj.__dict__.items():
+            if isinstance(val, list):
+                d[key] = [dictify(x) if isinstance(x, Objectify) else x for x in val]
+            else:
+                d[key] = dictify(val) if isinstance(val, Objectify) else val
+        return d
+
+def objectify(instance: Union[dict, list, tuple, set]) -> Union[List[Objectify], Objectify]:
+    if isinstance(instance, dict):
+        return Objectify(instance)
+    elif isinstance(instance, (list, tuple, set)):
+        return [Objectify(x) for x in instance]
+    else:
+        raise TypeError('Object must be an iterable')
+
 ############################################# CLASSES #############################################
 
 class Objectify:
     def __init__(self, d: dict):
         for key, val in d.items():
-            if isinstance(val, (list, tuple, set, frozenset)):
+            if isinstance(val, (list, tuple, set)):
                setattr(
                    self,
                    key,
                    [Objectify(x) if isinstance(x, dict) else x for x in val]
                 )
-
             else:
                setattr(
                    self,
@@ -143,14 +166,7 @@ class Config(object):
         return self.get_file(self.MEMBER, str(member.guild.id), str(member.id))
 
     def clear(self, *scopes: str):
-        if not scopes:
-            # noinspection PyTypeChecker
-            identifier_data = IdentifierData(self.cog_name, self.unique_identifier, "", (), (), 0)
-            group = Group(identifier_data, defaults={}, driver=self.driver, config=self)
-        else:
-            cat, *scopes = scopes
-            group = self._get_base_group(cat, *scopes)
-        group.clear()
+        pass
 
     def clear_all(self):
         self.clear()

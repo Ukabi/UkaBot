@@ -3,8 +3,11 @@
 #################### DISCORD ####################
 from discord.ext.commands import (
     Bot,
+    Cog,
     Context,
-    Group
+    Group,
+
+    command
 )
 
 ##################### COGS ######################
@@ -21,6 +24,10 @@ from Welcome import Welcome
 from utils import (
     load,
     write
+)
+from typing import (
+    List,
+    Union
 )
 
 ############################################# GLOBAL ##############################################
@@ -44,7 +51,7 @@ while not PREFIX:
     if PREFIX:
         BOT_CONFIG['prefix'] = PREFIX
         write('config.json', BOT_CONFIG)
-TOKEN = BOT_CONFIG.get('token')
+TOKEN = BOT_CONFIG.get('token', None)
 while not TOKEN:
     TOKEN = input('Enter bot token: ')
     if TOKEN:
@@ -55,13 +62,13 @@ bot = Bot(command_prefix=PREFIX)
 
 ############################################ FUNCTIONS ############################################
 
-def load_cogs(client: Bot, cogs: list):
+def load_cogs(client: Bot, cogs: List[Cog]):
     [client.add_cog(cog) for cog in [cog(client) for cog in cogs]]
 
-def unload_cogs(client: Bot, cogs: list):
+def unload_cogs(client: Bot, cogs: List[str]):
     [client.remove_cog(cog) for cog in cogs]
 
-def get_commands(instance: 'Union[Bot, Group]'):
+def get_commands(instance: Union[Bot, Group]) -> List[command]:
     commands = list()
     for command in instance.commands:
         if isinstance(command, Group):
