@@ -36,8 +36,20 @@ COGS = {
     Scheduler,
     Welcome
 }
-PREFIX = '!'
-TOKEN = 'NTczMTI4NTI1NzU0OTI1MDY2.XMmViA.CPKxKNW2gT7py5WoYmSosGCI7ic'
+
+BOT_CONFIG = load('config.json', {})
+PREFIX = BOT_CONFIG.get('prefix', None)
+while not PREFIX:
+    PREFIX = input('Choose bot prefix: ')
+    if PREFIX:
+        BOT_CONFIG['prefix'] = PREFIX
+        write('config.json', BOT_CONFIG)
+TOKEN = BOT_CONFIG.get('token')
+while not TOKEN:
+    TOKEN = input('Enter bot token: ')
+    if TOKEN:
+        BOT_CONFIG['token'] = TOKEN
+        write('config.json', BOT_CONFIG)
 
 bot = Bot(command_prefix=PREFIX)
 
