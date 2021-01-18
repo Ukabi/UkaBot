@@ -11,95 +11,15 @@ from discord.abc import GuildChannel
 import json
 import os
 import errno
+from Objectify import Objectify
 from typing import (
     Any,
+    Dict,
     List,
     Union
 )
 
-############################################ FUNCTIONS ############################################
-
-def mkdir_p(path: str):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
-
-def safe_open(
-        path: str,
-        mode: str,
-        buffering: int,
-        encoding: str,
-        errors: str,
-        newline: str,
-        closefd: bool,
-        opener: callable
-    ) -> open:
-    mkdir_p(os.path.dirname(path))
-    return open(
-        path,
-        mode=mode,
-        buffering=buffering,
-        encoding=encoding,
-        errors=errors,
-        newline=newline,
-        closefd=closefd,
-        opener=opener
-    )
-
-def load(path: str, iferror: Union[list, dict] = []) -> Union[list, dict]:
-    try:
-        with open(path, 'r') as file:
-            return json.load(file)
-    except FileNotFoundError or NotADirectoryError:
-        with safe_open(path, 'w') as file:
-            file.write(iferror)
-        return iferror
-
-def write(path, data: Union[list, dict]):
-    with safe_open(path, 'w') as file:
-        file.write(json.dumps(data))
-
-def dictify(obj: Union[List[Objectify], Objectify, Any]) -> Union[list, dict]:
-    if isinstance(obj, (list, tuple, set)):
-        return [dictify(x) for x in obj]
-    else:
-        d = dict()
-        for key, val in obj.__dict__.items():
-            if isinstance(val, list):
-                d[key] = [dictify(x) if isinstance(x, Objectify) else x for x in val]
-            else:
-                d[key] = dictify(val) if isinstance(val, Objectify) else val
-        return d
-
-def objectify(instance: Union[dict, list, tuple, set]) -> Union[List[Objectify], Objectify]:
-    if isinstance(instance, dict):
-        return Objectify(instance)
-    elif isinstance(instance, (list, tuple, set)):
-        return [Objectify(x) for x in instance]
-    else:
-        raise TypeError('Object must be an iterable')
-
 ############################################# CLASSES #############################################
-
-class Objectify:
-    def __init__(self, d: dict):
-        for key, val in d.items():
-            if isinstance(val, (list, tuple, set)):
-               setattr(
-                   self,
-                   key,
-                   [Objectify(x) if isinstance(x, dict) else x for x in val]
-                )
-            else:
-               setattr(
-                   self,
-                   key,
-                   Objectify(val) if isinstance(val, dict) else val
-                )
 
 class Group:
     def __init__(self, file: str, defaults: Union[list, dict] = {}):
@@ -191,3 +111,54 @@ class Config(object):
 
     def clear_all_users(self):
         self.clear(self.USER)
+
+############################################ FUNCTIONS ############################################
+
+def mkdir_p(path: str):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise OSError("Couldn't create file or directory.")
+
+def safe_open(
+        path: str,
+        mode: str,
+        buffering: int,
+        encoding: str,
+        errors: str,
+        newline: str,
+        closefd: bool,
+        opener: callable
+    ) -> open:
+    mkdir_p(os.path.dirname(path))
+    return open(
+        path,
+        mode=mode,
+        buffering=buffering,
+        encoding=encoding,
+        errors=errors,
+        newline=newline,
+        closefd=closefd,
+        opener=opener
+    )
+
+def load(
+        path: str,
+        iferror: Union[list, dict] = [],
+        toobject: bool = False
+    ) -> Union[list, dict, Objectify]:
+    try:
+        with open(path, 'r') as file:
+            data = json.load(file)
+    except FileNotFoundError or NotADirectoryError:
+        with safe_open(path, 'w') as file:
+            file.write(iferror)
+        data = iferror
+    return Objectify.objectify(data) if toobject else data
+
+def write(path, data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
+    with safe_open(path, 'w') as file:
+        file.write(json.dumps(Objectify.dictify(data)))
