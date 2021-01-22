@@ -8,32 +8,17 @@ from discord import (
 from discord.abc import GuildChannel
 
 ##################### UTILS #####################
-import json
-import os
-import errno
-from Objectify import Objectify
 from typing import (
     Any,
     Dict,
     List,
     Union
 )
+from utils.Group import Group
 
 ############################################# CLASSES #############################################
 
-class Group:
-    def __init__(self, file: str, defaults: Union[list, dict] = {}):
-        self.file = file
-        self.data = load(self.file, iferror=defaults)
-
-    def get(self):
-        return self.data
-
-    def set(self, data: Objectify):
-        write(self.file, data)
-        self.data = data
-
-class Config(object):
+class Config:
     GLOBAL = "global"
     GUILD = "guild"
     CHANNEL = "channel"
@@ -41,12 +26,12 @@ class Config(object):
     USER = "user"
     MEMBER = "member"
 
-    def __init__(self, cog: str = None, defaults: dict = {}):
+    def __init__(self, cog: str = None, defaults: Union[List[Any], Dict[str, Any]] = {}):
         if not cog:
             raise NameError('Cog name must exist')
         else:
             self.cog = cog
-            self.defaults = defaults or {}
+            self.defaults = defaults
 
     def get_file(self, *primary_keys: str):
         primary_keys = (self.cog, *primary_keys)
@@ -111,54 +96,3 @@ class Config(object):
 
     def clear_all_users(self):
         self.clear(self.USER)
-
-############################################ FUNCTIONS ############################################
-
-def mkdir_p(path: str):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise OSError("Couldn't create file or directory.")
-
-def safe_open(
-        path: str,
-        mode: str,
-        buffering: int,
-        encoding: str,
-        errors: str,
-        newline: str,
-        closefd: bool,
-        opener: callable
-    ) -> open:
-    mkdir_p(os.path.dirname(path))
-    return open(
-        path,
-        mode=mode,
-        buffering=buffering,
-        encoding=encoding,
-        errors=errors,
-        newline=newline,
-        closefd=closefd,
-        opener=opener
-    )
-
-def load(
-        path: str,
-        iferror: Union[list, dict] = [],
-        toobject: bool = False
-    ) -> Union[list, dict, Objectify]:
-    try:
-        with open(path, 'r') as file:
-            data = json.load(file)
-    except FileNotFoundError or NotADirectoryError:
-        with safe_open(path, 'w') as file:
-            file.write(iferror)
-        data = iferror
-    return Objectify.objectify(data) if toobject else data
-
-def write(path, data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
-    with safe_open(path, 'w') as file:
-        file.write(json.dumps(Objectify.dictify(data)))

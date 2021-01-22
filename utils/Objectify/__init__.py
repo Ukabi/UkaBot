@@ -80,6 +80,9 @@ class Objectify:
                 else:
                     d[key] = Objectify.dictify(val) if isinstance(val, Objectify) else val
             return d
+        
+        # Just for the fun
+        # return [Objectify.dictify(x) for x in instance] if isinstance(instance, (list, tuple, set, frozenset)) else {key: Objectify.dictify(val) for key, val in instance.items()} if isinstance(instance, dict) else instance if not isinstance(instance, Objectify) else {k: [Objectify.dictify(x) if isinstance(x, Objectify) else x for x in v] if isinstance(v, list) else Objectify.dictify(v) if isinstance(v, Objectify) else v for k, v in instance.__dict__.items()}
 
     @staticmethod
     def is_objectify(instance: Union[List["Objectify"], "Objectify", Any]) -> bool:
