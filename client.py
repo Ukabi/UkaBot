@@ -21,7 +21,7 @@ from Scheduler import Scheduler
 from Welcome import Welcome
 
 ##################### UTILS #####################
-from utils import (
+from utils.utils import (
     load,
     write
 )
@@ -29,6 +29,9 @@ from typing import (
     List,
     Union
 )
+#from utils.errors import (
+#    None
+#)
 
 ############################################# GLOBAL ##############################################
 
@@ -44,31 +47,63 @@ COGS = {
     Welcome
 }
 
-BOT_CONFIG = load('config.json', {})
+CONFIG_PATH = 'config.json'
+BOT_CONFIG = load(CONFIG_PATH, {})
+
 PREFIX = BOT_CONFIG.get('prefix', None)
 while not PREFIX:
     PREFIX = input('Choose bot prefix: ')
     if PREFIX:
         BOT_CONFIG['prefix'] = PREFIX
-        write('config.json', BOT_CONFIG)
+        write(CONFIG_PATH, BOT_CONFIG)
+
 TOKEN = BOT_CONFIG.get('token', None)
 while not TOKEN:
     TOKEN = input('Enter bot token: ')
     if TOKEN:
         BOT_CONFIG['token'] = TOKEN
-        write('config.json', BOT_CONFIG)
+        write(CONFIG_PATH, BOT_CONFIG)
 
 bot = Bot(command_prefix=PREFIX)
 
 ############################################ FUNCTIONS ############################################
 
 def load_cogs(client: Bot, cogs: List[Cog]):
+    """Loads cogs on client.
+
+    Parameters
+        client: Bot
+            The client to load the cogs on
+        cogs: List[Cog]
+            The `list` of `Cog` to load
+
+    """
     [client.add_cog(cog) for cog in [cog(client) for cog in cogs]]
 
 def unload_cogs(client: Bot, cogs: List[str]):
+    """Unloads cogs from client.
+
+    Parameters
+        client: Bot
+            The client to load the cogs on
+        cogs: List[Cog]
+            The `list` of `str` to unload, strings being the `Cog` class name
+
+    """
     [client.remove_cog(cog) for cog in cogs]
 
 def get_commands(instance: Union[Bot, Group]) -> List[command]:
+    """Gets loaded commands from client.
+
+    Parameters
+        instance: Union[Bot, Group]
+            The instance to look for commands in
+    
+    Returns
+        List[command]
+            The `list` of `command` loaded on client
+
+    """
     commands = list()
     for command in instance.commands:
         if isinstance(command, Group):
@@ -81,6 +116,9 @@ def get_commands(instance: Union[Bot, Group]) -> List[command]:
 
 @bot.event
 async def on_ready():
+    """This runs when bot has done logging in and setting up.
+
+    """
     names_cogs_map = {cog.__name__.lower(): cog for cog in COGS}
     cog_names_to_load = load(COG_PATH)
     cogs_to_load = [names_cogs_map[cog_name] for cog_name in cog_names_to_load]
