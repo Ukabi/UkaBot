@@ -18,7 +18,7 @@ class Objectify:
     """
 
     def __init__(self, d: Dict[str, Any]):
-        for key, val in _str_key_dict(d).items():
+        for key, val in str_key_dict(d).items():
             if isinstance(val, (list, tuple, set, frozenset)):
                setattr(
                    self,
@@ -31,6 +31,9 @@ class Objectify:
                    key,
                    Objectify(val) if isinstance(val, dict) else val
                 )
+    
+    def __repr__(self):
+        return str(Objectify.dictify(self))
 
     @staticmethod
     def objectify(instance: Union[dict, list, tuple, set, frozenset]) -> Union[List["Objectify"], "Objectify"]:
@@ -106,7 +109,7 @@ class Objectify:
 
 ############################################ FUNCTIONS ############################################
 
-def _str_key_dict(value: Dict[Any, Any]) -> Dict[str, Any]:
+def str_key_dict(value: Dict[Any, Any]) -> Dict[str, Any]:
     """
     Recursively casts all keys in the given `dict` to `str`.
 
@@ -122,6 +125,6 @@ def _str_key_dict(value: Dict[Any, Any]) -> Dict[str, Any]:
     ret = {}
     for key, val in value.items():
         if isinstance(val, dict):
-            val = _str_key_dict(val)
+            val = str_key_dict(val)
         ret[str(key)] = val
     return ret

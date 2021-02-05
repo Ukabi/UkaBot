@@ -33,42 +33,73 @@ class Config:
             self.cog = cog
             self.defaults = defaults
 
-    def get_file(self, *primary_keys: str):
-        primary_keys = (self.cog, *primary_keys)
-        file = self.cog
+    def get_file(self, *primary_keys: str) -> Group:
+        file = f'{self.cog}/'
         file += GLOBAL if not primary_keys else "/".join(primary_keys)
         file += ".json"
         return Group(file, defaults=self.defaults)
 
-    def guild_from_id(self, guild_id: int):
-        return self.get_file(self.GUILD, str(guild_id))
+    def guild_from_id(self, guild_id: int) -> Group:
+        return self.get_file(
+            self.GUILD,
+            str(guild_id)
+        )
 
-    def guild(self, guild: Guild):
-        return self.get_file(self.GUILD, str(guild.id))
+    def guild(self, guild: Guild) -> Group:
+        return self.get_file(
+            self.GUILD,
+            str(guild.id)
+        )
 
-    def channel_from_id(self, channel_id: int):
-        return self.get_file(self.CHANNEL, str(channel_id))
+    def channel_from_id(self, channel_id: int) -> Group:
+        return self.get_file(
+            self.CHANNEL,
+            str(channel_id)
+        )
 
-    def channel(self, channel: GuildChannel):
-        return self.get_file(self.CHANNEL, str(channel.id))
+    def channel(self, channel: GuildChannel) -> Group:
+        return self.get_file(
+            self.CHANNEL,
+            str(channel.id)
+        )
 
-    def role_from_id(self, role_id: int):
-        return self.get_file(self.ROLE, str(role_id))
+    def role_from_id(self, role_id: int) -> Group:
+        return self.get_file(
+            self.ROLE,
+            str(role_id)
+        )
 
-    def role(self, role: Role):
-        return self.get_file(self.ROLE, str(role.id))
+    def role(self, role: Role) -> Group:
+        return self.get_file(
+            self.ROLE,
+            str(role.id)
+        )
 
-    def user_from_id(self, user_id: int):
-        return self.get_file(self.USER, str(user_id))
+    def user_from_id(self, user_id: int) -> Group:
+        return self.get_file(
+            self.USER,
+            str(user_id)
+        )
 
-    def user(self, user: User):
-        return self.get_file(self.USER, str(user.id))
+    def user(self, user: User) -> Group:
+        return self.get_file(
+            self.USER,
+            str(user.id)
+        )
 
-    def member_from_ids(self, guild_id: int, member_id: int):
-        return self.get_file(self.MEMBER, str(guild_id), str(member_id))
+    def member_from_ids(self, guild_id: int, member_id: int) -> Group:
+        return self.get_file(
+            self.MEMBER,
+            str(guild_id),
+            str(member_id)
+        )
 
-    def member(self, member: Member):
-        return self.get_file(self.MEMBER, str(member.guild.id), str(member.id))
+    def member(self, member: Member) -> Group:
+        return self.get_file(
+            self.MEMBER,
+            str(member.guild.id),
+            str(member.id)
+        )
 
     def clear(self, *scopes: str):
         pass
@@ -88,8 +119,8 @@ class Config:
     def clear_all_members(self, guild: Guild = None):
         if guild is not None:
             self.clear(self.MEMBER, str(guild.id))
-            return
-        self.clear(self.MEMBER)
+        else:
+            self.clear(self.MEMBER)
 
     def clear_all_roles(self):
         self.clear(self.ROLE)

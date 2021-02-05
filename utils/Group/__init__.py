@@ -5,6 +5,10 @@ from utils.utils import (
     load,
     write
 )
+from typing import (
+    List,
+    Union
+)
 
 ############################################# CLASSES #############################################
 
@@ -17,7 +21,7 @@ class Group:
             to_object=True
         )
 
-    def get(self):
+    def get(self) -> Union[List[Objectify], Objectify]:
         return self.data
 
     def set(self, data: Objectify):

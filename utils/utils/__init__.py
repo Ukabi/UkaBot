@@ -9,7 +9,11 @@ from typing import (
     List,
     Union
 )
-from utils.Objectify import Objectify
+from utils.Objectify import (
+    Objectify,
+
+    str_key_dict
+)
 
 ############################################ FUNCTIONS ############################################
 
@@ -29,21 +33,12 @@ def mkdir_p(path: str):
         else:
             raise OSError("Couldn't create file or directory.")
 
-def safe_open(path: str, mode: str, buffering: int, encoding: str, errors: str, newline: str, closefd: bool, opener: callable) -> open:
+def safe_open(path: str, mode: str) -> open:
     """Same as the `open` function, but safely creates file before.
 
     """
     mkdir_p(os.path.dirname(path))
-    return open(
-        path,
-        mode=mode,
-        buffering=buffering,
-        encoding=encoding,
-        errors=errors,
-        newline=newline,
-        closefd=closefd,
-        opener=opener
-    )
+    return open(path, mode=mode)
 
 def load(path: str, if_error: Union[list, dict] = [], to_object: bool = False) -> Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]:
     """Loads data from file path, as a json data file.
@@ -66,8 +61,7 @@ def load(path: str, if_error: Union[list, dict] = [], to_object: bool = False) -
         with open(path, 'r') as file:
             data = json.load(file)
     except FileNotFoundError or NotADirectoryError:
-        with safe_open(path, 'w') as file:
-            file.write(if_error)
+        write(path, if_error)
         data = if_error
     return Objectify.objectify(data) if to_object else data
 
@@ -82,4 +76,10 @@ def write(path: str, data: Union[List[Objectify], Objectify, List[Any], Dict[str
 
     """
     with safe_open(path, 'w') as file:
-        file.write(json.dumps(Objectify.dictify(data)))
+        file.write(
+            json.dumps(
+                str_key_dict(
+                    Objectify.dictify(data)
+                )
+            )
+        )
