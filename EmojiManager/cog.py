@@ -41,7 +41,7 @@ class EmojiManager(Cog):
     ######################################### CONSTRUCTOR #########################################
 
     def __init__(self, bot: Bot):
-        pass
+        self.bot = bot
 
     #################################### EMOJI MANAGER COMMANDS ###################################
 
