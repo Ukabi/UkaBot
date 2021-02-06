@@ -47,12 +47,12 @@ class Welcome(Cog):
         guild = member.guild
         guild_data = self.config.guild(guild).get()
 
-        channel_id = guild_data.channel
+        channel_id = guild_data[self.CHANNEL]
         channel = guild.get_channel(channel_id)
 
         if channel:
-            title = guild_data.title
-            message  = guild_data.message
+            title = guild_data[self.TITLE]
+            message  = guild_data[self.MESSAGE]
             embed = Embed(
                 title=title.format(member),
                 description=message.format(member)
