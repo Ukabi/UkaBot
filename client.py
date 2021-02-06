@@ -190,7 +190,8 @@ async def cog_unload(ctx: Context, *, cog_names: str):
 async def cog_list(ctx: Context):
     async with ctx.typing():
         cog_names = {name.lower() for name in bot.cogs.keys()}
-        await ctx.send(", ".join(cog_names))
+        message = ", ".join(cog_names) if cog_names else "No cog loaded."
+        await ctx.send(message)
 
 @bot.command(name='commands')
 async def bot_commands(ctx: Context):

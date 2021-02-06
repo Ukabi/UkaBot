@@ -8,20 +8,20 @@ from discord import (
 )
 from discord.ext.commands import (
     BadArgument,
+    Bot,
     Cog,
     Context,
     TextChannelConverter,
 )
-from discord.ext.commands import (
-    group,
-    has_guild_permissions,
-    has_permissions
-)
+from discord.ext.commands import group
 
 ##################### UTILS #####################
 from typing import Union
 from utils import Config as Cfg
-from utils import update_config
+from utils import (
+    admin,
+    update_config
+)
 
 ############################################## COGS ###############################################
 
@@ -32,7 +32,7 @@ class Welcome(Cog):
 
     ###############################################################################################
 
-    def __init__(self):
+    def __init__(self, bot: Bot):
         defaults = {
             self.CHANNEL: 0,
             self.TITLE: "Welcome!",
@@ -78,7 +78,6 @@ class Welcome(Cog):
                 channel = await TextChannelConverter().convert(ctx, str(channel))
 
             update_config(
-                ctx=ctx,
                 config=self.config.guild(ctx.guild),
                 attribute=self.CHANNEL,
                 value=channel.id
@@ -91,7 +90,6 @@ class Welcome(Cog):
     async def welcome_message(self, ctx: Context, *, message: str):
         """**[message]** : edits the welcome message's text."""
         update_config(
-            ctx=ctx,
             config=self.config.guild(ctx.guild),
             attribute=self.MESSAGE,
             value=message
@@ -102,7 +100,6 @@ class Welcome(Cog):
     async def welcome_title(self, ctx: Context, *, title: str):
         """**[text]** : edits the welcome message's title."""
         update_config(
-            ctx=ctx,
             config=self.config.guild(ctx.guild),
             attribute=self.TITLE,
             value=title

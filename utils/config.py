@@ -339,13 +339,14 @@ def mkdir_p(path: str):
             The path to desired location
 
     """
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise OSError("Couldn't create file or directory.")
+    if path:
+        try:
+            os.makedirs(path)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else:
+                raise OSError("Couldn't create file or directory.")
 
 def safe_open(path: str, mode: str) -> open:
     """Same as the `open` function, but safely creates file before.
