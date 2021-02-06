@@ -1,7 +1,14 @@
 ############################################# IMPORTS #############################################
 
 #################### DISCORD ####################
-from discord.ext.commands import Context
+from discord import (
+    Embed,
+    File
+)
+from discord.ext.commands import (
+    Bot,
+    Context
+)
 
 ##################### UTILS #####################
 from typing import (
@@ -15,6 +22,18 @@ from .config import Group
 from .objectify import Objectify
 
 ############################################ FUNCTIONS ############################################
+
+async def ask_confirmation(ctx: Context, bot: Bot, pic: File = None, message: str = "Type y/n to confirm"):
+    def check(m):
+        return not any(
+            m.channel != ctx.channel,
+            m.author != ctx.message.author,
+            m.content.lower()[0] not in "yn"
+        )
+
+    await ctx.send(message, file=pic)
+    confirm = await bot.wait_for('message', check=check)
+    return confirm.content.lower().startswith("y")
 
 def update_config(config: Group, attribute: str, value: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
     """General function for config file updating.
