@@ -5,10 +5,9 @@ from discord.ext.commands import (
     Bot,
     Cog,
     Context,
-    Group,
-
-    command
+    Group
 )
+from discord.ext.commands import command
 
 ##################### COGS ######################
 from Birthday import Birthday
@@ -21,17 +20,14 @@ from Scheduler import Scheduler
 from Welcome import Welcome
 
 ##################### UTILS #####################
-from utils.utils import (
-    load,
-    write
-)
 from typing import (
     List,
     Union
 )
-#from utils.errors import (
-#    None
-#)
+from utils import (
+    load,
+    write
+)
 
 ############################################# GLOBAL ##############################################
 
