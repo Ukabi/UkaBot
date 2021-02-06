@@ -20,7 +20,7 @@ class BaseDiscordException:
 
     async def execute(self):
         await self.ctx.send(
-            Embed(
+            embed=Embed(
                 color=self.color,
                 title=self.title,
                 description=self.message
