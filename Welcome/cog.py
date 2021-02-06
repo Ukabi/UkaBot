@@ -18,6 +18,7 @@ from discord.ext.commands import group
 ##################### UTILS #####################
 from typing import Union
 from utils import Config as Cfg
+from utils import InvalidArguments
 from utils import (
     admin,
     update_config
@@ -82,8 +83,20 @@ class Welcome(Cog):
                 attribute=self.CHANNEL,
                 value=channel.id
             )
+
+            embed = Embed(
+                title='Channel Changed',
+                description=f'Successfully updated channel to {channel.mention}'
+            )
+            await ctx.send(embed=embed)
+
         except BadArgument:
-            pass
+            error = InvalidArguments(
+                ctx,
+                title='Channel Error',
+                message='Channel not found or not provided'
+            )
+            await error.execute()
 
     @admin()
     @welcome_group.command(name='message')
