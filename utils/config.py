@@ -79,12 +79,17 @@ class Config:
     Parameters
         cog: `discord.ext.commands.Cog`
             The `Cog` to represent
-        defaults: Union[List[Any], Dict[str, Any]] = {}
-            The value to set to any new file created
         to_object: bool = False
             Determines if the `Group.data` attribute is either an
             Union[List[`Objectify`], `Objectify`] instance or an
             Union[List[Any], Dict[str, Any]] instance
+        **defaults: Dict[str, Union[List[Any], Dict[str, Any]]]
+            The value to set to any new file created, if not
+            provided, defaults to {}
+            Supported key arguments : global, guild, channel, role,
+            user, member
+            Example: guild={'foo': []} will initiate any new guild
+            configuation file to {'foo': []}
 
     """
     GLOBAL = "global"
@@ -94,15 +99,81 @@ class Config:
     USER = "user"
     MEMBER = "member"
 
-    def __init__(self, cog: Cog = None, defaults: Union[List[Any], Dict[str, Any]] = {}, to_object: bool = False):
+    def __init__(self, cog: Cog = None, to_object: bool = False, **defaults: Dict[str, Union[List[Any], Dict[str, Any]]]):
         if not cog or not isinstance(cog, Cog):
             raise NameError('Cog must be provided')
         else:
             self.cog = cog.__class__.__name__
-            self.defaults = defaults
             self.to_object = to_object
 
-    def get_file(self, *primary_keys: str) -> Group:
+            self.defaults_global(defaults.pop(self.GLOBAL, {}))
+            self.defaults_guild(defaults.pop(self.GUILD, {}))
+            self.defaults_channel(defaults.pop(self.CHANNEL, {}))
+            self.defaults_role(defaults.pop(self.ROLE, {}))
+            self.defaults_user(defaults.pop(self.USER, {}))
+            self.defaults_member(defaults.pop(self.MEMBER, {}))
+
+    def defaults_global(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+        """Sets default value for global configuration files.
+
+        Parameters
+            defaults: Union[List[Any], Dict[str, Any]] = {}
+                The default value to parse
+
+        """
+        self.defaults = defaults
+
+    def defaults_guild(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+        """Sets default value for guild configuration files.
+
+        Parameters
+            defaults: Union[List[Any], Dict[str, Any]] = {}
+                The default value to parse
+
+        """
+        self.defaults_g = defaults
+
+    def defaults_channel(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+        """Sets default value for channel configuration files.
+
+        Parameters
+            defaults: Union[List[Any], Dict[str, Any]] = {}
+                The default value to parse
+
+        """
+        self.defaults_c = defaults
+
+    def defaults_role(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+        """Sets default value for role configuration files.
+
+        Parameters
+            defaults: Union[List[Any], Dict[str, Any]] = {}
+                The default value to parse
+
+        """
+        self.defaults_r = defaults
+
+    def defaults_user(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+        """Sets default value for user configuration files.
+
+        Parameters
+            defaults: Union[List[Any], Dict[str, Any]] = {}
+                The default value to parse
+
+        """
+        self.defaults_u = defaults
+
+    def defaults_member(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+        """Sets default value for member configuration files.
+
+        Parameters
+            defaults: Union[List[Any], Dict[str, Any]] = {}
+                The default value to parse
+
+        """
+        self.defaults_m = defaults
+
+    def get_file(self, *primary_keys: str, defaults: Union[List[Any], Dict[str, Any]] = {}) -> Group:
         """Returns the wanted configuration file according to given arguments,
         as a `Group` instance.
 
@@ -116,13 +187,13 @@ class Config:
                 The representation of config file
 
         """
-        file = f'{self.cog}/'
-        file += GLOBAL if not primary_keys else "/".join(primary_keys)
-        file += ".json"
+        path = f'{self.cog}/'
+        path += self.GLOBAL if not primary_keys else "/".join(primary_keys)
+        path += ".json"
 
         return Group(
-            file,
-            defaults=self.defaults,
+            path,
+            defaults=defaults,
             to_object=self.to_object
         )
 
@@ -140,7 +211,9 @@ class Config:
         """
         return self.get_file(
             self.GUILD,
-            str(guild.id)
+            str(guild.id),
+
+            defaults=self.defaults_g
         )
 
     def guild_from_id(self, guild_id: int) -> Group:
@@ -157,7 +230,9 @@ class Config:
         """
         return self.get_file(
             self.GUILD,
-            str(guild_id)
+            str(guild_id),
+
+            defaults=self.defaults_g
         )
 
     def channel(self, channel: GuildChannel) -> Group:
@@ -174,7 +249,9 @@ class Config:
         """
         return self.get_file(
             self.CHANNEL,
-            str(channel.id)
+            str(channel.id),
+
+            defaults=self.defaults_c
         )
 
     def channel_from_id(self, channel_id: int) -> Group:
@@ -191,7 +268,9 @@ class Config:
         """
         return self.get_file(
             self.CHANNEL,
-            str(channel_id)
+            str(channel_id),
+
+            defaults=self.defaults_c
         )
 
     def role(self, role: Role) -> Group:
@@ -208,7 +287,9 @@ class Config:
         """
         return self.get_file(
             self.ROLE,
-            str(role.id)
+            str(role.id),
+
+            defaults=self.defaults_r
         )
 
     def role_from_id(self, role_id: int) -> Group:
@@ -225,7 +306,9 @@ class Config:
         """
         return self.get_file(
             self.ROLE,
-            str(role_id)
+            str(role_id),
+
+            defaults=self.defaults_r
         )
 
     def user(self, user: User) -> Group:
@@ -242,7 +325,9 @@ class Config:
         """
         return self.get_file(
             self.USER,
-            str(user.id)
+            str(user.id),
+
+            defaults=self.defaults_u
         )
 
     def user_from_id(self, user_id: int) -> Group:
@@ -259,7 +344,9 @@ class Config:
         """
         return self.get_file(
             self.USER,
-            str(user_id)
+            str(user_id),
+
+            defaults=self.defaults_u
         )
 
     def member(self, member: Member) -> Group:
@@ -277,7 +364,9 @@ class Config:
         return self.get_file(
             self.MEMBER,
             str(member.guild.id),
-            str(member.id)
+            str(member.id),
+
+            defaults=self.defaults_m
         )
 
     def member_from_ids(self, guild_id: int, member_id: int) -> Group:
@@ -299,35 +388,86 @@ class Config:
         return self.get_file(
             self.MEMBER,
             str(guild_id),
-            str(member_id)
+            str(member_id),
+
+            defaults=self.defaults_m
         )
 
-    def clear(self, *scopes: str):
-        pass
+    def clear(self, defaults: Union[List[Any], Dict[str, Any]] = {}, *scopes: str):
+        """Sets to default every configuration file in asked path.
+
+        Parameters
+            defaults: Union[List[Any], Dict[str, Any]] = {}
+                The default value to write
+            *scopes: List[str]
+                The path keys to targeted folder
+
+        """
+        folder = self.cog
+        files = os.listdir(folder)
+        for scope in scopes:
+            folder += f'/{scope}'
+            files = os.listdir(folder)
+        files = [file for file in files if file.endswith('.json')]
+
+        for file in files:
+            write(f'{folder}/{file}', defaults)
 
     def clear_all(self):
-        self.clear()
+        """Sets to default every configuration file for cog.
 
-    def clear_all_channels(self):
-        self.clear(self.CHANNEL)
+        """
+        self.clear_all_globals()
+        self.clear_all_guilds()
+        self.clear_all_channels()
+        self.clear_all_roles()
+        self.clear_all_users()
+        self.clear_all_members()
 
     def clear_all_globals(self):
-        self.clear(self.GLOBAL)
+        """Sets to default every global configuration file for cog.
+
+        """
+        self.clear(self.defaults, self.GLOBAL)
 
     def clear_all_guilds(self):
-        self.clear(self.GUILD)
+        """Sets to default every guild configuration file for cog.
 
-    def clear_all_members(self, guild: Guild = None):
-        if guild is not None:
-            self.clear(self.MEMBER, str(guild.id))
-        else:
-            self.clear(self.MEMBER)
+        """
+        self.clear(self.defaults_g, self.GUILD)
+
+    def clear_all_channels(self):
+        """Sets to default every channel configuration file for cog.
+
+        """
+        self.clear(self.defaults_c, self.CHANNEL)
 
     def clear_all_roles(self):
-        self.clear(self.ROLE)
+        """Sets to default every role configuration file for cog.
+
+        """
+        self.clear(self.defaults_r, self.ROLE)
 
     def clear_all_users(self):
-        self.clear(self.USER)
+        """Sets to default every user configuration file for cog.
+
+        """
+        self.clear(self.defaults_u, self.USER)
+
+    def clear_all_members(self, guild: Guild = None):
+        """Sets to default every member configuration file for cog.
+        /!\ As a `discord.Member` is part of a `discord.Guild`,
+        the `Guild` needs to be provided.
+
+        Parameters
+            guild: `Guild` = None
+                The guild to aim for
+
+        """
+        if guild is not None:
+            self.clear(self.defaults_m, self.MEMBER, guild.id)
+        else:
+            self.clear(self.defaults_m, self.MEMBER)
 
 ############################################ FUNCTIONS ############################################
 
