@@ -27,11 +27,11 @@ from typing import (
     List,
     Union
 )
-from utils import InvalidArguments
 from utils import (
     admin_or_permissions,
     ask_confirmation
 )
+from utils.exceptions import InvalidArguments
 
 ############################################### COGS ##############################################
 

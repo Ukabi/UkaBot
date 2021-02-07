@@ -17,11 +17,11 @@ from discord.ext.commands import group
 ##################### UTILS #####################
 from typing import Union
 from utils import Config as Cfg
-from utils import InvalidArguments
 from utils import (
     admin,
     update_config
 )
+from utils.exceptions import InvalidArguments
 
 ############################################### COGS ##############################################
 
