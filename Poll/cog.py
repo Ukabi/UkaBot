@@ -97,7 +97,8 @@ class Poll(Cog):
 
     @admin()
     @poll_group.command(name='channel')
-    async def poll_channel(self, ctx: Context, channel: Union[TextChannel, str, int]):
+    async def poll_channel(self, ctx: Context,
+                           channel: Union[TextChannel, str, int]):
         """
         **[#channel or channel name]** :
         sets the channel where to send polls.

@@ -25,6 +25,25 @@ from .objectify import Objectify
 
 async def ask_confirmation(ctx: Context, bot: Bot, pic: File = None,
                            message: str = "Type y/n to confirm"):
+    """A general confirmation message request.
+
+    Parameters
+        ctx: `Context`
+            The command `Context`
+        bot: `Bot`
+            The `Bot`
+        pic: `File = None`
+            The `File` to send
+        message: `str = "Type y/n to confirm"`
+            The message that will tell the `User` that a confirmation
+            is required
+    
+    Returns
+        `bool`
+            `True` if `User` replies with `y`,
+            or `False` if they reply with `n`
+
+    """
     def check(m):
         return not any(
             m.channel != ctx.channel,
@@ -38,14 +57,14 @@ async def ask_confirmation(ctx: Context, bot: Bot, pic: File = None,
 
 def update_config(config: Group, attribute: str,
                   value: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
-    """General function for config file updating.
+    """A general function for configuration file updating.
 
     Parameters
-        config: `utils.Group`
+        config: `Group`
             The config file to edit
-        attribute: str
+        attribute: `str`
             The attribute to edit
-        value: Union[List[`Objectify`], `Objectify`, List[Any], Dict[str, Any]]
+        value: `Union[List[`Objectify`], `Objectify`, List[Any], Dict[str, Any]]`
             The value to set
 
     """

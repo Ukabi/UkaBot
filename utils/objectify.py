@@ -11,9 +11,9 @@ from typing import (
 
 class Objectify:
     """A more intuitive way to manipulate simple dictionnaries.
-    Transforms any json-like dict into an attribute-oriented class.
+    Transforms any json-like `dict` into an attribute-oriented class.
 
-    Example: foo['bar'][0]['key'] -> foo.bar[0].key
+    Example: `foo['bar'][0]['key'] <-> foo.bar[0].key`
 
     """
 
@@ -39,15 +39,15 @@ class Objectify:
     def objectify(
         instance: Union[dict, list, tuple, set, frozenset]
     ) -> Union[List["Objectify"], "Objectify"]:
-        """Main operation: transposes any simple dict or list into an
+        """Main operation: transposes any simple `dict` or `list` into an
         attribute-oriented object.
 
         Parameters
-            instance: Union[dict, list, tuple, set, frozenset]
+            instance: `Union[dict, list, tuple, set, frozenset]`
                 The object to operate on
-        
+
         Returns
-            Union[List[Objectify], Objectify]
+            `Union[List[Objectify], Objectify]`
                 Result of transposition
 
         """
@@ -59,15 +59,17 @@ class Objectify:
             raise TypeError('Object must be iterable or dict')
 
     @staticmethod
-    def dictify(instance: Union[List["Objectify"], "Objectify", Any]) -> Union[list, dict]:
-        """Inverted operation: transposes any Objectify-composed object into a dict.
+    def dictify(
+        instance: Union[List["Objectify"], "Objectify", Any]
+    ) -> Union[list, dict]:
+        """Inverted operation: transposes any `Objectify`-composed object into a `dict`.
 
         Parameters
-            instance: Union[List[Objectify], Objectify, Any]
+            instance: `Union[List[Objectify], Objectify, Any]`
                 The object to operate on
-        
+
         Returns
-            Union[list, dict]
+            `Union[list, dict]`
                 Result of transposition
 
         """
@@ -90,16 +92,18 @@ class Objectify:
         # return [Objectify.dictify(x) for x in instance] if isinstance(instance, (list, tuple, set, frozenset)) else {key: Objectify.dictify(val) for key, val in instance.items()} if isinstance(instance, dict) else instance if not isinstance(instance, Objectify) else {k: [Objectify.dictify(x) if isinstance(x, Objectify) else x for x in v] if isinstance(v, list) else Objectify.dictify(v) if isinstance(v, Objectify) else v for k, v in instance.__dict__.items()}
 
     @staticmethod
-    def is_objectify(instance: Union[List["Objectify"], "Objectify", Any]) -> bool:
+    def is_objectify(
+        instance: Union[List["Objectify"], "Objectify", Any]
+    ) -> bool:
         """Verifies if the instance contains any `Objectify` component.
 
         Parameters
-            instance: Union[List[Objectify], Objectify, Any]
+            instance: `Union[List[Objectify], Objectify, Any]`
                 The object to operate on
 
         Returns
-            bool
-                True if any `Objectify` object in the tree else False
+            `bool`
+                `True` if any `Objectify` object in the tree else `False`
 
         """
         if isinstance(instance, (list, tuple, set, frozenset)):
@@ -116,11 +120,11 @@ def str_key_dict(value: Dict[Any, Any]) -> Dict[str, Any]:
     Recursively casts all keys in the given `dict` to `str`.
 
     Parameters
-        value: Dict[Any, Any]
+        value: `Dict[Any, Any]`
             The `dict` to cast keys to `str`.
 
     Returns
-        Dict[str, Any]
+        `Dict[str, Any]`
             The `dict` with keys (and nested keys) casted to `str`.
 
     """

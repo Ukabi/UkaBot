@@ -28,14 +28,14 @@ class Group:
     """Represents a single configuration file.
 
     Parameters
-        file: str
+        file: `str`
             The path to config file
-        defaults: Union[List[Any], Dict[str, Any]] = {}
+        defaults: `Union[List[Any], Dict[str, Any]] = {}`
             The default value if file doesn't exist
-        to_object: bool = False
+        to_object: `bool = False`
             Determines if the `Group.data` attribute is either an
-            Union[List[`Objectify`], `Objectify`] instance or an
-            Union[List[Any], Dict[str, Any]] instance
+            `Union[List[`Objectify`], `Objectify`]` instance or an
+            `Union[List[Any], Dict[str, Any]]` instance
 
     """
 
@@ -50,21 +50,24 @@ class Group:
 
     def get(self) -> Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]:
         """Returns the config file data.
-        
+
         Returns
-            Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+            `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
                 Config file data
-                Instance of Union[List[`Objectify`], `Objectify`] if Group.to_object is set to
-                True, else instance of Union[List[Any], Dict[str, Any]]
+                Instance of `Union[List[`Objectify`], `Objectify`]` if
+                `Group.to_object` is set to `True`, else instance of
+                `Union[List[Any], Dict[str, Any]]`
 
         """
         return self.data
 
-    def set(self, data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
+    def set(self,
+            data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+    ):
         """Overwrite previous data to new given value.
 
         Parameters
-            data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+            data: `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
                 The data to set
 
         """
@@ -74,23 +77,23 @@ class Group:
 class Config:
     """Represents a `Cog` configuration files tree.
 
-    For example, Config.guild(discord.Guild) will return the
+    For example, `Config.guild(Guild)` will return the
     configuration file of `Cog` for the given `Guild`.
 
     Parameters
-        cog: `discord.ext.commands.Cog`
+        cog: `Cog`
             The `Cog` to represent
-        to_object: bool = False
+        to_object: `bool = False`
             Determines if the `Group.data` attribute is either an
-            Union[List[`Objectify`], `Objectify`] instance or an
-            Union[List[Any], Dict[str, Any]] instance
-        **defaults: Dict[str, Union[List[Any], Dict[str, Any]]]
+            `Union[List[`Objectify`], `Objectify`]` instance or an
+            `Union[List[Any], Dict[str, Any]]` instance
+        **defaults: `Dict[str, Union[List[Any], Dict[str, Any]]]`
             The value to set to any new file created, if not
-            provided, defaults to {}
+            provided, defaults to `{}`
             Supported key arguments : global, guild, channel, role,
             user, member
-            Example: guild={'foo': []} will initiate any new guild
-            configuation file to {'foo': []}
+            Example: `guild={'foo': []}` will initiate any new guild
+            configuation file to `{'foo': []}`
 
     """
     GLOBAL = "global"
@@ -119,57 +122,57 @@ class Config:
         """Sets default value for global configuration files.
 
         Parameters
-            defaults: Union[List[Any], Dict[str, Any]] = {}
+            defaults: `Union[List[Any], Dict[str, Any]] = {}`
                 The default value to parse
 
         """
         self.defaults = defaults
 
     def defaults_guild(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
-        """Sets default value for guild configuration files.
+        """Sets default value for `Guild` configuration files.
 
         Parameters
-            defaults: Union[List[Any], Dict[str, Any]] = {}
+            defaults: `Union[List[Any], Dict[str, Any]] = {}`
                 The default value to parse
 
         """
         self.defaults_g = defaults
 
     def defaults_channel(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
-        """Sets default value for channel configuration files.
+        """Sets default value for `GuildChannel` configuration files.
 
         Parameters
-            defaults: Union[List[Any], Dict[str, Any]] = {}
+            defaults: `Union[List[Any], Dict[str, Any]] = {}`
                 The default value to parse
 
         """
         self.defaults_c = defaults
 
     def defaults_role(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
-        """Sets default value for role configuration files.
+        """Sets default value for `Role` configuration files.
 
         Parameters
-            defaults: Union[List[Any], Dict[str, Any]] = {}
+            defaults: `Union[List[Any], Dict[str, Any]] = {}`
                 The default value to parse
 
         """
         self.defaults_r = defaults
 
     def defaults_user(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
-        """Sets default value for user configuration files.
+        """Sets default value for `User` configuration files.
 
         Parameters
-            defaults: Union[List[Any], Dict[str, Any]] = {}
+            defaults: `Union[List[Any], Dict[str, Any]] = {}`
                 The default value to parse
 
         """
         self.defaults_u = defaults
 
     def defaults_member(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
-        """Sets default value for member configuration files.
+        """Sets default value for `Member` configuration files.
 
         Parameters
-            defaults: Union[List[Any], Dict[str, Any]] = {}
+            defaults: `Union[List[Any], Dict[str, Any]] = {}`
                 The default value to parse
 
         """
@@ -181,12 +184,12 @@ class Config:
         as a `Group` instance.
 
         Parameters
-            *primary keys: List[str]
-                The keys that will lead to configuration file
-                Example: self.get_file('foo', 'bar') -> '{self.cog}/foo/bar.json'
+            *primary keys: `List[str]`
+                The keys leading to configuration file
+                Example: `self.get_file('foo', 'bar') -> '{self.cog}/foo/bar.json'`
 
         Returns
-            Group
+            `Group`
                 The representation of config file
 
         """
@@ -201,15 +204,15 @@ class Config:
         )
 
     def guild(self, guild: Guild) -> Group:
-        """Returns the given `discord.Guild` configuration file for self.cog.
+        """Returns the given `Guild` `Group` for `self.cog`.
 
         Parameters
-            guild: `discord.Guild`
-                The guild to look for
+            guild: `Guild`
+                The `Guild` to look for
 
         Returns
-            Group
-                The representation of guild configuration file
+            `Group`
+                The representation of `Guild` configuration file
 
         """
         return self.get_file(
@@ -220,15 +223,15 @@ class Config:
         )
 
     def guild_from_id(self, guild_id: int) -> Group:
-        """Returns the given `discord.Guild.id` configuration file for self.cog.
+        """Returns the given `Guild` `Group` for `self.cog`.
 
         Parameters
-            guild: int
-                The guild id to look for
+            guild_id: `int`
+                The `Guild` id to look for
 
         Returns
-            Group
-                The representation of guild configuration file
+            `Group`
+                The representation of `Guild` configuration file
 
         """
         return self.get_file(
@@ -239,15 +242,15 @@ class Config:
         )
 
     def channel(self, channel: GuildChannel) -> Group:
-        """Returns the given `discord.GuildChannel` configuration file for self.cog.
+        """Returns the given `GuildChannel` `Group` for `self.cog`.
 
         Parameters
-            channel: GuildChannel
-                The member to look for
+            channel: `GuildChannel`
+                The `GuildChannel` to look for
 
         Returns
-            Group
-                The representation of channel configuration file
+            `Group`
+                The representation of `GuildChannel` configuration file
 
         """
         return self.get_file(
@@ -258,15 +261,15 @@ class Config:
         )
 
     def channel_from_id(self, channel_id: int) -> Group:
-        """Returns the given `discord.GuildChannel.id` configuration file for self.cog.
+        """Returns the given `GuildChannel` `Group` for `self.cog`.
 
         Parameters
-            channel_id: int
-                The channel id to look for
+            channel_id: `int`
+                The `GuildChannel` id to look for
 
         Returns
-            Group
-                The representation of channel configuration file
+            `Group`
+                The representation of `GuildChannel` configuration file
 
         """
         return self.get_file(
@@ -277,15 +280,15 @@ class Config:
         )
 
     def role(self, role: Role) -> Group:
-        """Returns the given `discord.Role` configuration file for self.cog.
+        """Returns the given `Role` `Group` for `self.cog`.
 
         Parameters
-            role: Role
-                The member to look for
+            role: `Role`
+                The `Role` to look for
 
         Returns
-            Group
-                The representation of role configuration file
+            `Group`
+                The representation of `Role` configuration file
 
         """
         return self.get_file(
@@ -296,15 +299,15 @@ class Config:
         )
 
     def role_from_id(self, role_id: int) -> Group:
-        """Returns the given `discord.Role.id` configuration file for self.cog.
+        """Returns the given `Role` `Group` for `self.cog`.
 
         Parameters
-            role_id: int
-                The channel id to look for
+            role_id: `int`
+                The `Role` id to look for
 
         Returns
-            Group
-                The representation of role configuration file
+            `Group`
+                The representation of `Role` configuration file
 
         """
         return self.get_file(
@@ -315,15 +318,15 @@ class Config:
         )
 
     def user(self, user: User) -> Group:
-        """Returns the given `discord.User` configuration file for self.cog.
+        """Returns the given `User` `Group` for `self.cog`.
 
         Parameters
-            user: User
-                The member to look for
+            user: `User`
+                The `User` to look for
 
         Returns
-            Group
-                The representation of user configuration file
+            `Group`
+                The representation of `User` configuration file
 
         """
         return self.get_file(
@@ -334,15 +337,15 @@ class Config:
         )
 
     def user_from_id(self, user_id: int) -> Group:
-        """Returns the given `discord.User.id` configuration file for self.cog.
+        """Returns the given `User` `Group` for `self.cog`.
 
         Parameters
-            user_id: int
-                The channel id to look for
+            user_id: `int`
+                The `User` id to look for
 
         Returns
-            Group
-                The representation of user configuration file
+            `Group`
+                The representation of `User` configuration file
 
         """
         return self.get_file(
@@ -353,15 +356,15 @@ class Config:
         )
 
     def member(self, member: Member) -> Group:
-        """Returns the given `discord.Member` configuration file for self.cog.
+        """Returns the given `Member` `Group` for `self.cog`.
 
         Parameters
-            member: Member
-                The member to look for
+            member: `Member`
+                The `Member` to look for
 
         Returns
-            Group
-                The representation of member configuration file
+            `Group`
+                The representation of `Member` configuration file
 
         """
         return self.get_file(
@@ -373,19 +376,19 @@ class Config:
         )
 
     def member_from_ids(self, guild_id: int, member_id: int) -> Group:
-        """Returns the given `discord.Member` configuration file for self.cog.
-        /!\ A `discord.Member` is a `discord.User` associated to a `discord.Guild`,
-        so both IDs are needed.
+        """Returns the given `Member` `Group` for `self.cog`.
+        /!\ A `Member` is a `User` associated to a `Guild`, so both IDs
+        are required.
 
         Parameters
-            guild_id: int
-                The guild id to look for
-            member_id: int
-                The user id to look for
+            guild_id: `int`
+                The `Guild` id to look for
+            member_id: `int`
+                The `Union[User, Member]` id to look for
 
         Returns
-            Group
-                The representation of member configuration file
+            `Group`
+                The representation of `Member` configuration file
 
         """
         return self.get_file(
@@ -396,13 +399,14 @@ class Config:
             defaults=self.defaults_m
         )
 
-    def clear(self, defaults: Union[List[Any], Dict[str, Any]] = {}, *scopes: str):
-        """Sets to default every configuration file in asked path.
+    def clear_folder(self, defaults: Union[List[Any], Dict[str, Any]] = {},
+              *scopes: List[str]):
+        """Sets to default every `Group` in requested path.
 
         Parameters
-            defaults: Union[List[Any], Dict[str, Any]] = {}
+            defaults: `Union[List[Any], Dict[str, Any]] = {}`
                 The default value to write
-            *scopes: List[str]
+            *scopes: `List[str]`
                 The path keys to targeted folder
 
         """
@@ -417,7 +421,7 @@ class Config:
             write(f'{folder}/{file}', defaults)
 
     def clear_all(self):
-        """Sets to default every configuration file for cog.
+        """Sets to default every `Group` for `self.cog`.
 
         """
         self.clear_all_globals()
@@ -428,39 +432,39 @@ class Config:
         self.clear_all_members()
 
     def clear_all_globals(self):
-        """Sets to default every global configuration file for cog.
+        """Sets to default every global `Group` for `self.cog`.
 
         """
-        self.clear(self.defaults, self.GLOBAL)
+        self.clear_folder(self.defaults, self.GLOBAL)
 
     def clear_all_guilds(self):
-        """Sets to default every guild configuration file for cog.
+        """Sets to default every `Guild` `Group` for `self.cog`.
 
         """
-        self.clear(self.defaults_g, self.GUILD)
+        self.clear_folder(self.defaults_g, self.GUILD)
 
     def clear_all_channels(self):
-        """Sets to default every channel configuration file for cog.
+        """Sets to default every `GuildChannel` `Group` for `self.cog`.
 
         """
-        self.clear(self.defaults_c, self.CHANNEL)
+        self.clear_folder(self.defaults_c, self.CHANNEL)
 
     def clear_all_roles(self):
-        """Sets to default every role configuration file for cog.
+        """Sets to default every `Role` `Group` for `self.cog`.
 
         """
-        self.clear(self.defaults_r, self.ROLE)
+        self.clear_folder(self.defaults_r, self.ROLE)
 
     def clear_all_users(self):
-        """Sets to default every user configuration file for cog.
+        """Sets to default every `User` `Group` for `self.cog`.
 
         """
-        self.clear(self.defaults_u, self.USER)
+        self.clear_folder(self.defaults_u, self.USER)
 
     def clear_all_members(self, guild: Guild = None):
-        """Sets to default every member configuration file for cog.
-        /!\ As a `discord.Member` is part of a `discord.Guild`,
-        the `Guild` needs to be provided.
+        """Sets to default every `Member` `Group` for `self.cog`.
+        /!\ As a `Member` is part of a `Guild`, the `Guild` needs to be
+        provided.
 
         Parameters
             guild: `Guild` = None
@@ -468,9 +472,9 @@ class Config:
 
         """
         if guild is not None:
-            self.clear(self.defaults_m, self.MEMBER, guild.id)
+            self.clear_folder(self.defaults_m, self.MEMBER, guild.id)
         else:
-            self.clear(self.defaults_m, self.MEMBER)
+            self.clear_folder(self.defaults_m, self.MEMBER)
 
 ############################################ FUNCTIONS ############################################
 
@@ -478,7 +482,7 @@ def mkdir_p(path: str):
     """Safely creates path to desired location if it doesn't exist.
 
     Parameters
-        path: str
+        path: `str`
             The path to desired location
 
     """
@@ -499,20 +503,21 @@ def safe_open(path: str, mode: str) -> open:
     return open(path, mode=mode)
 
 def load(path: str, if_error: Union[list, dict] = [],
-         to_object: bool = False) -> Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]:
+         to_object: bool = False
+    ) -> Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]:
     """Loads data from file path, as a json data file.
 
     Parameters
-        path: str
+        path: `str`
             Desired file location path
-        if_error: Union[list, dict] = []
+        if_error: `Union[list, dict] = []`
             Value to return if file doesn't exist
-        to_object: bool = False
-            Automatically casts data to an `Objectify` or `List[Objectify]` object if True,
-            or keeps data as a simple `Dict[str, Any]` or `List[Any]` if False
+        to_object: `bool = False`
+            Automatically casts data to an `Objectify` or `List[Objectify]` object if
+            `True`, or keeps data as a simple `Dict[str, Any]` or `List[Any]` if `False`
     
     Returns
-        Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+        `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
             The extracted data from requested path
 
     """
@@ -524,13 +529,14 @@ def load(path: str, if_error: Union[list, dict] = [],
         data = if_error
     return Objectify.objectify(data) if to_object else data
 
-def write(path: str, data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
+def write(path: str,
+          data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
     """Writes data to path, as a json data file.
 
     Parameters
-        path: str
+        path: `str`
             Desired file location path
-        data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+        data: `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
             The data to write in file
 
     """
