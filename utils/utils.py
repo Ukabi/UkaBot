@@ -48,7 +48,7 @@ async def ask_confirmation(ctx: Context, bot: Bot, pic: File = None,
         return not any(
             m.channel != ctx.channel,
             m.author != ctx.message.author,
-            m.content.lower()[0] not in "yn"
+            m.content.lower()[:1] not in "yn"
         )
 
     await ctx.send(message, file=pic)
