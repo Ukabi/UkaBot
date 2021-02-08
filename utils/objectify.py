@@ -31,12 +31,14 @@ class Objectify:
                    key,
                    Objectify(val) if isinstance(val, dict) else val
                 )
-    
+
     def __repr__(self):
         return str(Objectify.dictify(self))
 
     @staticmethod
-    def objectify(instance: Union[dict, list, tuple, set, frozenset]) -> Union[List["Objectify"], "Objectify"]:
+    def objectify(
+        instance: Union[dict, list, tuple, set, frozenset]
+    ) -> Union[List["Objectify"], "Objectify"]:
         """Main operation: transposes any simple dict or list into an
         attribute-oriented object.
 
@@ -94,7 +96,7 @@ class Objectify:
         Parameters
             instance: Union[List[Objectify], Objectify, Any]
                 The object to operate on
-        
+
         Returns
             bool
                 True if any `Objectify` object in the tree else False

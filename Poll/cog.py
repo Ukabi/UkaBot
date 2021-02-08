@@ -95,7 +95,6 @@ class Poll(Cog):
             )
             await error.execute()
 
-
     @admin()
     @poll_group.command(name='channel')
     async def poll_channel(self, ctx: Context, channel: Union[TextChannel, str, int]):
