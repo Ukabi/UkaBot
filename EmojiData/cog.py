@@ -278,15 +278,16 @@ class EmojiData(Cog):
         self, progress_message: Message, channel: TextChannel, count_channel: int,
         count_total: int, count_channels: List[TextChannel]
     ):
-        edit = (
-            "\n".join([" - ".join([str(val) for val in chan]) for chan in count_channels]) + "\n"
-            f"{channel.name} process: {count_channel}" + "\n"
-            "\n"
-            f"Total processed message: {count_total}"
-        )
+        message = ""
+        for c_name, c_count in count_channels:
+            message += f"{c_name} - {c_count}" + "\n"
+        message += f"{channel.name} process: {count_channel}" + "\n"
+        message += "\n"
+        message += f"Total processed messages: {count_total}"
+
         embed = Embed(
             title="Count progress",
-            description=edit
+            description=message
         )
         await progress_message.edit(embed=embed)
 

@@ -34,7 +34,7 @@ class Group:
             The default value if file doesn't exist
         to_object: `bool = False`
             Determines if the `Group.data` attribute is either an
-            `Union[List[`Objectify`], `Objectify`]` instance or an
+            `Union[List[Objectify], Objectify]` instance or an
             `Union[List[Any], Dict[str, Any]]` instance
 
     """
@@ -55,7 +55,7 @@ class Group:
         Returns
             `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
                 Config file data
-                Instance of `Union[List[`Objectify`], `Objectify`]` if
+                Instance of `Union[List[Objectify], Objectify]` if
                 `Group.to_object` is set to `True`, else instance of
                 `Union[List[Any], Dict[str, Any]]`
 
