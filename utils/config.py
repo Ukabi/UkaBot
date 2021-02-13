@@ -104,6 +104,8 @@ class Config:
     USER = "user"
     MEMBER = "member"
 
+    EXTENTION = ".json"
+
     def __init__(
         self, cog: Cog = None, to_object: bool = False,
         **defaults: Dict[str, Union[List[Any], Dict[str, Any]]]
@@ -199,7 +201,7 @@ class Config:
         """
         path = f'{self.cog}/'
         path += self.GLOBAL if not primary_keys else "/".join(primary_keys)
-        path += ".json"
+        path += self.EXTENTION
 
         return Group(
             path,
@@ -403,8 +405,9 @@ class Config:
             defaults=self.defaults_m
         )
 
-    def clear_folder(self, defaults: Union[List[Any], Dict[str, Any]] = {},
-              *scopes: List[str]):
+    def clear_folder(
+        self, defaults: Union[List[Any], Dict[str, Any]] = {}, *scopes: List[str]
+    ):
         """Sets to default every `Group` in requested path.
 
         Parameters
@@ -419,7 +422,7 @@ class Config:
         for scope in scopes:
             folder += f'/{scope}'
             files = os.listdir(folder)
-        files = [file for file in files if file.endswith('.json')]
+        files = [file for file in files if file.endswith(self.EXTENTION)]
 
         for file in files:
             write(f'{folder}/{file}', defaults)

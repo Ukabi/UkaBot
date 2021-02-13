@@ -57,12 +57,13 @@ class Poll(Cog):
         args = [arg.strip() for arg in args.split(sep=self.SEP)]
 
         question = args.pop(0)
-        answers_list = [f'{self.FIGURES[n+1]}: {p}' for n, p in enumerate(args)]
-        answers = "\n\n".join(answers_list)
 
-        if len(answers_list) in range(2, 10):
+        if len(args) in range(1, 10):
             guild = ctx.guild
             guild_data = self.config.guild(guild).get()
+
+            answers_list = [f'{self.FIGURES[n+1]}: {p}' for n, p in enumerate(args)]
+            answers = "\n\n".join(answers_list)
 
             channel = guild.get_channel(guild_data[self.CHANNEL])
             if channel:
@@ -91,7 +92,10 @@ class Poll(Cog):
         else:
             error = InvalidArguments(
                 ctx=ctx,
-                message="Arguments couldn't be parsed"
+                message=(
+                    "Arguments couldn't be parsed" + "\n"
+                    "Check separator or answer count (9 max)"
+                )
             )
             await error.execute()
 

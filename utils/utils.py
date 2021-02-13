@@ -14,6 +14,7 @@ from discord.ext.commands import (
 from typing import (
     Any,
     Dict,
+    Iterable,
     List,
     Union
 )
@@ -86,3 +87,27 @@ def update_config(
             config_data[attribute] = value
 
     config.set(config_data)
+
+def get(
+    criterion: Any, iterable: Iterable[Any], attribute_condition: str
+) -> Any:
+    """A general function that returns matching element from an
+    `Iterable` considering a certain attribute name and a criterion.
+
+    Parameters
+        criterion: `Any`
+            The matching condition
+        iterable: `Iterable[Any]`
+            The `Iterable` to explore
+        attribute_condition: str
+            The class attribute name to look for
+    
+    Returns
+        `Any`
+            The element from iterable that matches with criterion.
+            If nothing is found, returns `None`
+
+    """
+    for element in iterable:
+        if getattr(element, attribute_condition) == criterion:
+            return element

@@ -54,7 +54,7 @@ class EmojiManager(Cog):
     @emoji_group.command(name='add')
     async def emoji_add(
         self, ctx: Context, file_path: str, name: str,
-        *roles: List[Union[int, str, Role]]
+        *roles: Union[int, str, Role]
     ):
         """
         **[file] [name] (roles)** : adds an emoji to the server,
@@ -103,7 +103,7 @@ class EmojiManager(Cog):
         answer = await ask_confirmation(
             ctx=ctx,
             bot=self.bot,
-            pic=File(file, filename="emoji_template.png"),
+            file=File(file, filename="emoji_template.png"),
             message=(
                 "Waiting for confirmation\n"
                 "Reply with y/n"
@@ -129,7 +129,7 @@ class EmojiManager(Cog):
 
     @admin_or_permissions(manage_emojis=True)
     @emoji_group.command(name='remove')
-    async def emoji_remove(self, ctx: cmd.Context, emoji: Union[str, int, Emoji]):
+    async def emoji_remove(self, ctx: Context, emoji: Union[str, int, Emoji]):
         """**[emoji]** : removes emoji from server."""
         try:
             emoji = await EmojiConverter().convert(ctx, emoji)
@@ -168,11 +168,12 @@ class EmojiManager(Cog):
     @emoji_group.command(name='list')
     async def emoji_list(self, ctx: Context):
         """: shows the server's emoji list."""
-        emojis = ctx.guild.emojis
+        emojis = sorted(ctx.guild.emojis, key=lambda e: e.name)
 
         if not emojis:
             message = "No emoji"
         else:
+            message = ""
             for emoji in emojis:
                 message += str(emoji) if emoji.available else emoji.name
                 if emoji.managed:
