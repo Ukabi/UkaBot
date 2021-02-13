@@ -82,7 +82,7 @@ class Poll(Cog):
 
             else:
                 error = InvalidArguments(
-                    ctx,
+                    ctx=ctx,
                     title='Channel Error',
                     message='Channel not found or not provided'
                 )
@@ -90,7 +90,7 @@ class Poll(Cog):
 
         else:
             error = InvalidArguments(
-                ctx,
+                ctx=ctx,
                 message="Arguments couldn't be parsed"
             )
             await error.execute()
@@ -122,7 +122,7 @@ class Poll(Cog):
 
         except BadArgument:
             error = InvalidArguments(
-                ctx,
+                ctx=ctx,
                 title='Channel Error',
                 message='Channel not found or not provided'
             )

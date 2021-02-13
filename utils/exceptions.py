@@ -7,8 +7,8 @@ from discord.ext.commands import Context
 
 class BaseDiscordException:
     def __init__(
-        self, ctx: Context, title: str = 'Error', message: str = '',
-        color: int = 0xFF0000
+        self, ctx: Context, title: str = 'Error',
+        message: str = '', color: int = 0xFF0000
     ):
         self.ctx = ctx
         self.title = title
@@ -28,8 +28,8 @@ class BaseDiscordException:
 
 class InvalidArguments(BaseDiscordException):
     def __init__(
-        self, ctx: Context, title: str = 'Invalid Arguments', message: str = '',
-        color: int = 0xFF0000
+        self, ctx: Context, title: str = 'Invalid Arguments',
+        message: str = '', color: int = 0xFF0000
     ):
         super().__init__(
             ctx,
@@ -40,8 +40,8 @@ class InvalidArguments(BaseDiscordException):
 
 class CommandNotFound(BaseDiscordException):
     def __init__(
-        self, ctx: Context, title: str = 'Command Not Found', message: str = '',
-        color: int = 0xFF0000
+        self, ctx: Context, title: str = 'Command Not Found',
+        message: str = '', color: int = 0xFF0000
     ):
         super().__init__(
             ctx,

@@ -94,7 +94,7 @@ class Welcome(Cog):
 
         except BadArgument:
             error = InvalidArguments(
-                ctx,
+                ctx=ctx,
                 title='Channel Error',
                 message='Channel not found or not provided'
             )

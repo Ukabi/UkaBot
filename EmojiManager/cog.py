@@ -64,7 +64,7 @@ class EmojiManager(Cog):
             roles = [await RoleConverter().convert(ctx, role) for role in roles]
         except BadArgument:
             error = InvalidArguments(
-                ctx,
+                ctx=ctx,
                 title='Role Error',
                 message="Provided roles could not be found"
             )
@@ -78,7 +78,7 @@ class EmojiManager(Cog):
                 file = io.BytesIO(bytes(req.content))
             else:
                 error = InvalidArguments(
-                    ctx,
+                    ctx=ctx,
                     title='Loading Error',
                     message="Couldn't retrieve picture from privided link"
                 )
@@ -93,7 +93,7 @@ class EmojiManager(Cog):
                     file = io.BytesIO(bytes(byte_data))
             except FileNotFoundError:
                 error = InvalidArguments(
-                    ctx,
+                    ctx=ctx,
                     title='Loading Error',
                     message="Couldn't retrieve picture from privided path"
                 )
@@ -136,7 +136,7 @@ class EmojiManager(Cog):
             emoji_parse = str(emoji) if emoji.available else emoji.name
         except BadArgument:
             error = InvalidArguments(
-                ctx,
+                ctx=ctx,
                 title='Emoji Error',
                 message="Provided emoji could not be found"
             )
