@@ -24,7 +24,7 @@ from .objectify import Objectify
 ############################################ FUNCTIONS ############################################
 
 async def ask_confirmation(
-    ctx: Context, bot: Bot, pic: File = None,
+    ctx: Context, bot: Bot, file: File = None,
     message: str = "Type y/n to confirm"
 ):
     """A general confirmation message request.
@@ -34,7 +34,7 @@ async def ask_confirmation(
             The command `Context`
         bot: `Bot`
             The `Bot`
-        pic: `File = None`
+        file: `File = None`
             The `File` to send
         message: `str = "Type y/n to confirm"`
             The message that will tell the `User` that a confirmation
@@ -47,19 +47,19 @@ async def ask_confirmation(
 
     """
     def check(m):
-        return not any([
-            m.channel != ctx.channel,
-            m.author != ctx.message.author,
-            m.content.lower()[:1] not in "yn"
-        ])
+        return not any([                               # and(conditions) <=> not or(not conditions)
+            m.channel != ctx.channel,                                            # channel matching
+            m.author != ctx.message.author,                                       # author matching
+            m.content.lower()[0] not in "yn" if m.content else True              # content matching
+        ])                                                   # (with special case being empty case)
 
-    await ctx.send(message, file=pic)
+    await ctx.send(message, file=file)
     confirm = await bot.wait_for('message', check=check)
     return confirm.content.lower().startswith("y")
 
 def update_config(
     config: Group, attribute: str,
-    value: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+    value: Union[List[Objectify], Objectify, List[Any], Dict[Any, Any]]
 ):
     """A general function for configuration file updating.
 
@@ -68,7 +68,7 @@ def update_config(
             The config file to edit
         attribute: `str`
             The attribute to edit
-        value: `Union[List[`Objectify`], `Objectify`, List[Any], Dict[str, Any]]`
+        value: `Union[List[Objectify], Objectify, List[Any], Dict[Any, Any]]`
             The value to set
 
     """

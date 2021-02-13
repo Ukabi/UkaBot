@@ -16,28 +16,35 @@ class Objectify:
     Example: `foo['bar'][0]['key'] <-> foo.bar[0].key`
 
     """
-
-    def __init__(self, d: Dict[str, Any]):
+    def __init__(self, d: Dict[Any, Any]):
         for key, val in str_key_dict(d).items():
-            if isinstance(val, (list, tuple, set, frozenset)):
+            if isinstance(val, (list, tuple)):
                setattr(
                    self,
                    key,
                    [Objectify(x) if isinstance(x, dict) else x for x in val]
                 )
-            else:
+            elif isinstance(val, dict):
                setattr(
                    self,
                    key,
                    Objectify(val) if isinstance(val, dict) else val
                 )
+            elif isinstance(val, Objectify):
+                setattr(
+                    self,
+                    key,
+                    val
+                )
+            else:
+                raise TypeError
 
     def __repr__(self):
         return str(Objectify.dictify(self))
 
     @staticmethod
     def objectify(
-        instance: Union[dict, list, tuple, set, frozenset]
+        instance: Union[dict, list, tuple]
     ) -> Union[List["Objectify"], "Objectify"]:
         """Main operation: transposes any simple `dict` or `list` into an
         attribute-oriented object.
@@ -53,10 +60,10 @@ class Objectify:
         """
         if isinstance(instance, dict):
             return Objectify(instance)
-        elif isinstance(instance, (list, tuple, set, frozenset)):
+        elif isinstance(instance, (list, tuple)):
             return [Objectify(x) for x in instance]
         else:
-            raise TypeError('Object must be iterable or dict')
+            raise TypeError('Object must be list, tuple or dict')
 
     @staticmethod
     def dictify(
@@ -73,7 +80,7 @@ class Objectify:
                 Result of transposition
 
         """
-        if isinstance(instance, (list, tuple, set, frozenset)):
+        if isinstance(instance, (list, tuple)):
             return [Objectify.dictify(x) for x in instance]
         elif isinstance(instance, dict):
             return {key: Objectify.dictify(val) for key, val in instance.items()}
@@ -106,7 +113,7 @@ class Objectify:
                 `True` if any `Objectify` object in the tree else `False`
 
         """
-        if isinstance(instance, (list, tuple, set, frozenset)):
+        if isinstance(instance, (list, tuple)):
             return any([Objectify.is_objectify(x) for x in instance])
         elif isinstance(instance, dict):
             return any([Objectify.is_objectify(x) for x in instance.values()])

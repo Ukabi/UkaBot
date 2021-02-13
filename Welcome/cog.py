@@ -110,6 +110,15 @@ class Welcome(Cog):
             value=message
         )
 
+        embed = Embed(
+            title='Message Changed',
+            description=(
+                'Successfully updated welcome message to :\n' +
+                message
+            )
+        )
+        await ctx.send(embed=embed)
+
     @admin()
     @welcome_group.command(name='title')
     async def welcome_title(self, ctx: Context, *, title: str):
@@ -119,3 +128,9 @@ class Welcome(Cog):
             attribute=self.TITLE,
             value=title
         )
+
+        embed = Embed(
+            title='Message Changed',
+            description=f'Successfully updated welcome message to {title}'
+        )
+        await ctx.send(embed=embed)
