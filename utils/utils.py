@@ -23,8 +23,10 @@ from .objectify import Objectify
 
 ############################################ FUNCTIONS ############################################
 
-async def ask_confirmation(ctx: Context, bot: Bot, pic: File = None,
-                           message: str = "Type y/n to confirm"):
+async def ask_confirmation(
+    ctx: Context, bot: Bot, pic: File = None,
+    message: str = "Type y/n to confirm"
+):
     """A general confirmation message request.
 
     Parameters
@@ -45,18 +47,20 @@ async def ask_confirmation(ctx: Context, bot: Bot, pic: File = None,
 
     """
     def check(m):
-        return not any(
+        return not any([
             m.channel != ctx.channel,
             m.author != ctx.message.author,
             m.content.lower()[:1] not in "yn"
-        )
+        ])
 
     await ctx.send(message, file=pic)
     confirm = await bot.wait_for('message', check=check)
     return confirm.content.lower().startswith("y")
 
-def update_config(config: Group, attribute: str,
-                  value: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
+def update_config(
+    config: Group, attribute: str,
+    value: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+):
     """A general function for configuration file updating.
 
     Parameters
