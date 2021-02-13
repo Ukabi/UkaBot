@@ -21,6 +21,7 @@ from Welcome import Welcome
 
 ##################### UTILS #####################
 from typing import (
+    Iterable,
     List,
     Union
 )
@@ -65,7 +66,7 @@ bot = Bot(command_prefix=PREFIX)
 
 ############################################ FUNCTIONS ############################################
 
-def load_cogs(client: Bot, cogs: List[Cog]):
+def load_cogs(client: Bot, cogs: Iterable[Cog]):
     """Loads cogs on client.
 
     Parameters
@@ -75,9 +76,11 @@ def load_cogs(client: Bot, cogs: List[Cog]):
             The `list` of `Cog` to load
 
     """
-    [client.add_cog(cog) for cog in [cog(client) for cog in cogs]]
+    for cog in cogs:
+        cog = cog(client)
+        client.add_cog(cog)
 
-def unload_cogs(client: Bot, cogs: List[str]):
+def unload_cogs(client: Bot, cogs: Iterable[str]):
     """Unloads cogs from client.
 
     Parameters
@@ -87,7 +90,8 @@ def unload_cogs(client: Bot, cogs: List[str]):
             The `list` of `str` to unload, strings being the `Cog` class name
 
     """
-    [client.remove_cog(cog) for cog in cogs]
+    for cog in cogs:
+        client.remove_cog(cog)
 
 def get_commands(instance: Union[Bot, Group]) -> List[command]:
     """Gets loaded commands from client.
@@ -118,10 +122,10 @@ async def on_ready():
     """
     names_cogs_map = {cog.__name__.lower(): cog for cog in COGS}
     cog_names_to_load = load(COG_PATH)
-    cogs_to_load = [names_cogs_map[cog_name] for cog_name in cog_names_to_load]
+    cogs_to_load = {names_cogs_map[cog_name] for cog_name in cog_names_to_load}
     load_cogs(bot, cogs_to_load)
 
-    loaded_cogs_names = {name.lower() for name in bot.cogs.keys()}
+    loaded_cogs_names = sorted({name.lower() for name in bot.cogs.keys()})
 
     print(f'Bot prefix: {PREFIX}')
     print(f'Logged in as {bot.user}')
@@ -141,14 +145,14 @@ async def cog_group(ctx: Context):
 async def cog_load(ctx: Context, *, cog_names: str):
     try:
         names_cogs_map = {cog.__name__.lower(): cog for cog in COGS}
-        loaded_cog_names = [name.lower() for name in bot.cogs.keys()]
+        loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
 
         cog_names = cog_names.lower().split()
 
-        to_load = list()
+        to_load = set()
         for cog_name in cog_names:
             if cog_name not in loaded_cog_names:
-                to_load.append(names_cogs_map[cog_name])
+                to_load.add(names_cogs_map[cog_name])
             else:
                 raise ValueError
 
@@ -177,14 +181,14 @@ async def cog_load(ctx: Context, *, cog_names: str):
 async def cog_unload(ctx: Context, *, cog_names: str):
     try:
         names_cogs_map = {cog.__name__.lower(): cog.__name__ for cog in COGS}
-        loaded_cog_names = [name.lower() for name in bot.cogs.keys()]
+        loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
 
         cog_names = cog_names.lower().split()
 
-        to_unload = list()
+        to_unload = set()
         for cog_name in cog_names:
             if cog_name in loaded_cog_names:
-                to_unload.append(names_cogs_map[cog_name])
+                to_unload.add(names_cogs_map[cog_name])
             elif cog_name not in names_cogs_map.keys():
                 raise KeyError
             else:
@@ -213,7 +217,7 @@ async def cog_unload(ctx: Context, *, cog_names: str):
 
 @cog_group.command(name='list')
 async def cog_list(ctx: Context):
-    cog_names = {name.lower() for name in bot.cogs.keys()}
+    cog_names = sorted({name.lower() for name in bot.cogs.keys()})
     message = ", ".join(cog_names) if cog_names else "No cog loaded"
 
     await ctx.send(message)
