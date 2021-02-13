@@ -52,8 +52,10 @@ class EmojiManager(Cog):
 
     @admin_or_permissions(manage_emojis=True)
     @emoji_group.command(name='add')
-    async def emoji_add(self, ctx: Context, file_path: str, name: str,
-                        *roles: List[Union[int, str, Role]]):
+    async def emoji_add(
+        self, ctx: Context, file_path: str, name: str,
+        *roles: List[Union[int, str, Role]]
+    ):
         """
         **[file] [name] (roles)** : adds an emoji to the server,
         if roles, restricts it for precised roles.

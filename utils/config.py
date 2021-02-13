@@ -39,8 +39,10 @@ class Group:
 
     """
 
-    def __init__(self, file: str, defaults: Union[List[Any], Dict[str, Any]] = {},
-                 to_object: bool = False):
+    def __init__(
+        self, file: str, defaults: Union[List[Any], Dict[str, Any]] = {},
+        to_object: bool = False
+    ):
         self.file = file
         self.data = load(
             self.file,
@@ -61,8 +63,8 @@ class Group:
         """
         return self.data
 
-    def set(self,
-            data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+    def set(
+        self, data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
     ):
         """Overwrite previous data to new given value.
 
@@ -103,8 +105,10 @@ class Config:
     USER = "user"
     MEMBER = "member"
 
-    def __init__(self, cog: Cog = None, to_object: bool = False,
-                 **defaults: Dict[str, Union[List[Any], Dict[str, Any]]]):
+    def __init__(
+        self, cog: Cog = None, to_object: bool = False,
+        **defaults: Dict[str, Union[List[Any], Dict[str, Any]]]
+    ):
         if not cog or not isinstance(cog, Cog):
             raise NameError('Cog must be provided')
         else:
@@ -178,8 +182,9 @@ class Config:
         """
         self.defaults_m = defaults
 
-    def get_file(self, *primary_keys: str,
-                 defaults: Union[List[Any], Dict[str, Any]] = {}) -> Group:
+    def get_file(
+        self, *primary_keys: str, defaults: Union[List[Any], Dict[str, Any]] = {}
+    ) -> Group:
         """Returns the wanted configuration file according to given arguments,
         as a `Group` instance.
 
@@ -502,8 +507,8 @@ def safe_open(path: str, mode: str) -> open:
     mkdir_p(os.path.dirname(path))
     return open(path, mode=mode)
 
-def load(path: str, if_error: Union[list, dict] = [],
-         to_object: bool = False
+def load(
+    path: str, if_error: Union[list, dict] = [], to_object: bool = False
     ) -> Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]:
     """Loads data from file path, as a json data file.
 
@@ -529,8 +534,10 @@ def load(path: str, if_error: Union[list, dict] = [],
         data = if_error
     return Objectify.objectify(data) if to_object else data
 
-def write(path: str,
-          data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]):
+def write(
+    path: str,
+    data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+):
     """Writes data to path, as a json data file.
 
     Parameters
