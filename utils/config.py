@@ -38,7 +38,6 @@ class Group:
             `Union[List[Any], Dict[str, Any]]` instance
 
     """
-
     def __init__(
         self, file: str, defaults: Union[List[Any], Dict[str, Any]] = {},
         to_object: bool = False
@@ -64,12 +63,12 @@ class Group:
         return self.data
 
     def set(
-        self, data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
+        self, data: Union[List[Objectify], Objectify, List[Any], Dict[Any, Any]]
     ):
         """Overwrite previous data to new given value.
 
         Parameters
-            data: `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
+            data: `Union[List[Objectify], Objectify, List[Any], Dict[Any, Any]]`
                 The data to set
 
         """

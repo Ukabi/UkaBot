@@ -18,13 +18,12 @@ class BaseDiscordException:
         print(f"{self.__class__.__name__}: {title}: {message}")
 
     async def execute(self):
-        await self.ctx.send(
-            embed=Embed(
-                color=self.color,
-                title=self.title,
-                description=self.message
-            )
+        embed = Embed(
+            color=self.color,
+            title=self.title,
+            description=self.message
         )
+        await self.ctx.send(embed=embed)
 
 class InvalidArguments(BaseDiscordException):
     def __init__(
