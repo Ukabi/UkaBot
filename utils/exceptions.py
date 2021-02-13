@@ -7,16 +7,15 @@ from discord.ext.commands import Context
 
 class BaseDiscordException:
     def __init__(
-        self,
-        ctx: Context,
-        title: str = 'Error',
-        message: str = '',
+        self, ctx: Context, title: str = 'Error', message: str = '',
         color: int = 0xFF0000
     ):
         self.ctx = ctx
         self.title = title
         self.message = message
         self.color = color
+
+        print(f"{self.__class__.__name__}: {title}: {message}")
 
     async def execute(self):
         await self.ctx.send(
@@ -29,10 +28,7 @@ class BaseDiscordException:
 
 class InvalidArguments(BaseDiscordException):
     def __init__(
-        self,
-        ctx: Context,
-        title: str = 'Invalid Arguments',
-        message: str = '',
+        self, ctx: Context, title: str = 'Invalid Arguments', message: str = '',
         color: int = 0xFF0000
     ):
         super().__init__(
@@ -44,10 +40,7 @@ class InvalidArguments(BaseDiscordException):
 
 class CommandNotFound(BaseDiscordException):
     def __init__(
-        self,
-        ctx: Context,
-        title: str = 'Command Not Found',
-        message: str = '',
+        self, ctx: Context, title: str = 'Command Not Found', message: str = '',
         color: int = 0xFF0000
     ):
         super().__init__(
