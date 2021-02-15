@@ -49,6 +49,9 @@ class Group:
             to_object=to_object
         )
 
+    def __repr__(self):
+        return str(Objectify.dictify(self.data))
+
     def get(self) -> Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]:
         """Returns the config file data.
 
@@ -91,13 +94,13 @@ class Config:
         **defaults: `Dict[str, Union[List[Any], Dict[str, Any]]]`
             The value to set to any new file created, if not
             provided, defaults to `{}`
-            Supported key arguments : global, guild, channel, role,
+            Supported key arguments : globals, guild, channel, role,
             user, member
             Example: `guild={'foo': []}` will initiate any new guild
             configuation file to `{'foo': []}`
 
     """
-    GLOBAL = "global"
+    GLOBALS = "globals"
     GUILD = "guild"
     CHANNEL = "channel"
     ROLE = "role"
@@ -116,14 +119,14 @@ class Config:
             self.cog = cog.__class__.__name__
             self.to_object = to_object
 
-            self.defaults_global(defaults.pop(self.GLOBAL, {}))
+            self.defaults_globals(defaults.pop(self.GLOBALS, {}))
             self.defaults_guild(defaults.pop(self.GUILD, {}))
             self.defaults_channel(defaults.pop(self.CHANNEL, {}))
             self.defaults_role(defaults.pop(self.ROLE, {}))
             self.defaults_user(defaults.pop(self.USER, {}))
             self.defaults_member(defaults.pop(self.MEMBER, {}))
 
-    def defaults_global(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+    def defaults_globals(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
         """Sets default value for global configuration files.
 
         Parameters
@@ -199,14 +202,19 @@ class Config:
                 The representation of config file
 
         """
-        path = f'{self.cog}/'
-        path += self.GLOBAL if not primary_keys else "/".join(primary_keys)
+        path = f"{self.cog}/"
+        path += "/".join(primary_keys) if primary_keys else self.GLOBALS
         path += self.EXTENTION
 
         return Group(
             path,
             defaults=defaults,
             to_object=self.to_object
+        )
+
+    def globals(self) -> Group:
+        return self.get_file(
+            defaults=self.defaults
         )
 
     def guild(self, guild: Guild) -> Group:
@@ -405,68 +413,181 @@ class Config:
             defaults=self.defaults_m
         )
 
+    def get_folder(self, *scopes: str) -> str and List[str]:
+        """Returns path to folder and folder files names.
+        If path doesn't exist, safely creates it and returns an empty files list.
+
+        Parameters
+            *scopes: `str`
+                The path elements leading to directory
+        
+        Returns
+            `str`
+                Path to folder
+            `List[str]`
+                Folder files names
+
+        """
+        path_to_folder = f"{self.cog}/{'/'.join(scopes)}"
+
+        try:
+            files = os.listdir(path_to_folder)
+            files = [file for file in files if file.endswith(self.EXTENTION)]
+        except FileNotFoundError:
+            mkdir_p(path_to_folder)
+            files = list()
+
+        return path_to_folder, files
+
+    def get_all(self, *scopes: str) -> Dict[str, Group]:
+        """Returns a dict composed of files names from requested directory
+        as keys and `Group` corresponding to file as values.
+
+        Parameters
+            *scopes: `str`
+                The path elements leading to directory
+
+        Returns
+            `Dict[str, Group]`
+
+        """
+        path_to_folder, files = self.get_folder(*scopes)
+
+        paths = [f"{path_to_folder}/{file}" for file in files]
+        groups = [Group(path, to_object=self.to_object) for path in paths]
+
+        files_without_extention = [file[:-len(self.EXTENTION)] for file in files]
+        return {f: g for f, g in zip(files_without_extention, groups)}
+
+    def get_all_guilds(self) -> Dict[int, Group]:
+        """Returns a dict composed of `Guild` ids as keys and
+        `Group` corresponding to `Guild` as values.
+
+        Returns
+            `Dict[int, Group]`
+
+        """
+        return {int(k): v for k, v in self.get_all(self.GUILD).items()}
+
+    def get_all_channels(self) -> Dict[int, Group]:
+        """Returns a dict composed of `GuildChannel` ids as keys and
+        `Group` corresponding to `GuildChannel` as values.
+
+        Returns
+            `Dict[int, Group]`
+
+        """
+        return {int(k): v for k, v in self.get_all(self.CHANNEL).items()}
+
+    def get_all_roles(self) -> Dict[int, Group]:
+        """Returns a dict composed of `Role` ids as keys and
+        `Group` corresponding to `Role` as values.
+
+        Returns
+            `Dict[int, Group]`
+
+        """
+        return {int(k): v for k, v in self.get_all(self.ROLE).items()}
+
+    def get_all_users(self) -> Dict[int, Group]:
+        """Returns a dict composed of `User` ids as keys and
+        `Group` corresponding to `User` as values.
+
+        Returns
+            `Dict[int, Group]`
+
+        """
+        return {int(k): v for k, v in self.get_all(self.USER).items()}
+
+    def get_all_members(self, guild: Guild) -> Dict[int, Group]:
+        """Returns a dict composed of `Member` ids as keys and
+        `Group` corresponding to `Member` as values.
+        /!\ As A `Member` is part of a `Guild`, `Guild` must be provided.
+
+        Parameters
+            guild: `Guild`
+                The `Guild`
+
+        Returns
+            `Dict[int, Group]`
+
+        """
+        return {int(k): v for k, v in self.get_all(self.MEMBER, guild.id).items()}
+
+    def get_all_members_with_guild_id(self, guild_id: int) -> Dict[int, Group]:
+        """Returns a dict composed of `Member` ids as keys and
+        `Group` corresponding to `Member` as values.
+        /!\ As A `Member` is part of a `Guild`, `Guild` id must be provided.
+
+        Parameters
+            guild_id: `int`
+                The `Guild` id
+
+        Returns
+            `Dict[int, Group]`
+
+        """
+        return {int(k): v for k, v in self.get_all(self.MEMBER, guild_id).items()}
+
     def clear_folder(
-        self, defaults: Union[List[Any], Dict[str, Any]] = {}, *scopes: List[str]
+        self, *scopes: str, defaults: Union[List[Any], Dict[str, Any]] = {}
     ):
         """Sets to default every `Group` in requested path.
 
         Parameters
             defaults: `Union[List[Any], Dict[str, Any]] = {}`
                 The default value to write
-            *scopes: `List[str]`
+            *scopes: `str`
                 The path keys to targeted folder
 
         """
-        folder = self.cog
-        files = os.listdir(folder)
-        for scope in scopes:
-            folder += f'/{scope}'
-            files = os.listdir(folder)
-        files = [file for file in files if file.endswith(self.EXTENTION)]
-
+        path_to_folder, files = self.get_folder(*scopes)
         for file in files:
-            write(f'{folder}/{file}', defaults)
+            write(f"{path_to_folder}/{file}", defaults)
 
-    def clear_all(self):
-        """Sets to default every `Group` for `self.cog`.
-
-        """
-        self.clear_all_globals()
-        self.clear_all_guilds()
-        self.clear_all_channels()
-        self.clear_all_roles()
-        self.clear_all_users()
-        self.clear_all_members()
-
-    def clear_all_globals(self):
+    def clear_globals(self):
         """Sets to default every global `Group` for `self.cog`.
 
         """
-        self.clear_folder(self.defaults, self.GLOBAL)
+        self.clear_folder(
+            defaults=self.defaults
+        )
 
     def clear_all_guilds(self):
         """Sets to default every `Guild` `Group` for `self.cog`.
 
         """
-        self.clear_folder(self.defaults_g, self.GUILD)
+        self.clear_folder(
+            self.GUILD,
+            defaults=self.defaults_g
+        )
 
     def clear_all_channels(self):
         """Sets to default every `GuildChannel` `Group` for `self.cog`.
 
         """
-        self.clear_folder(self.defaults_c, self.CHANNEL)
+        self.clear_folder(
+            self.CHANNEL,
+            defaults=self.defaults_c
+        )
 
     def clear_all_roles(self):
         """Sets to default every `Role` `Group` for `self.cog`.
 
         """
-        self.clear_folder(self.defaults_r, self.ROLE)
+        self.clear_folder(
+            self.ROLE,
+            defaults=self.defaults_r
+        )
 
     def clear_all_users(self):
         """Sets to default every `User` `Group` for `self.cog`.
 
         """
-        self.clear_folder(self.defaults_u, self.USER)
+        self.clear_folder(
+            self.USER,
+            defaults=self.defaults_u
+        )
 
     def clear_all_members(self, guild: Guild = None):
         """Sets to default every `Member` `Group` for `self.cog`.
@@ -478,10 +599,13 @@ class Config:
                 The guild to aim for
 
         """
-        if guild is not None:
-            self.clear_folder(self.defaults_m, self.MEMBER, guild.id)
-        else:
-            self.clear_folder(self.defaults_m, self.MEMBER)
+        if guild:
+            self.clear_folder(
+                self.MEMBER,
+                guild.id,
+                
+                defaults=self.defaults_m
+            )
 
 ############################################ FUNCTIONS ############################################
 
