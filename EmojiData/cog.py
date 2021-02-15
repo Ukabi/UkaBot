@@ -31,27 +31,28 @@ from emoji import (
     demojize,
     emojize
 )
-from typing import Dict, List, Union
+from typing import (
+    Dict,
+    List,
+    Union
+)
 from utils import Config as Cfg
 from utils import (
-    admin,
     ask_confirmation,
-    get,
     update_config
 )
+from utils.checks import admin
 from utils.exceptions import InvalidArguments
 
 ############################################### COGS ##############################################
 
 class EmojiData(Cog):
     FIND_CUSTOM_EMOJIS = re.compile("(?<=<:)\w+:\d+(?=>)").findall
-    FIND_EMOJIS = re.compile("(?<=:)\w+(?=:)").findall               # For Alias, not supported yet
-    VERIFY_EMOJI = re.compile("<:\w+:\d+>").match
+    FIND_EMOJIS = re.compile("(?<=:)\w+(?=:)").findall
 
     APPEND = 1
     REMOVE = -1
 
-    ALIASES = "aliases"                                              # For Alias, not supported yet
     COUNT = "count"
     DATA = "data"
     LAST_CHECKED = "last_checked"
@@ -64,7 +65,6 @@ class EmojiData(Cog):
         self.config = Cfg(self)
 
         self.default_guild = {
-            self.ALIASES: {},                                        # For Alias, not supported yet
             self.DATA: {},
             self.LAST_CHECKED: 1420066800.0,
         }
@@ -77,19 +77,19 @@ class EmojiData(Cog):
 
     @tasks.loop(hours=1)
     async def scheduler(self):
-        #TODO: ALL_STUFF SUPPORT IN Config LIBRARY
-        #guilds = self.config.all_guilds()
+        guilds_configs = self.config.get_all_guilds()
 
-        #for guild_id, guild_data in guilds.items():
-        #    guild = self.bot.get_guild(guild_id)
-        #    if guild:
-        #        await self.treat_guild(
-        #            guild=guild,
-        #            last_checked=guild_data[self.LAST_CHECKED]
-        #        )
+        for guild_id, guild_config in guilds_configs.items():
+            guild = self.bot.get_guild(guild_id)
+            if guild:
+                guild_data = guild_config.get()
+                print(guild_data)
+                await self.treat_guild(
+                    guild=guild,
+                    last_checked=guild_data[self.LAST_CHECKED]
+                )
 
-        #        self.update_check(guild)
-        pass
+                self.update_check(guild)
 
     @scheduler.before_loop
     async def before_scheduler(self):
@@ -556,200 +556,3 @@ class EmojiData(Cog):
             title=title,
             description=message
         )
-
-    ####################################### ALIAS COMMANDS ########################################
-    """
-    def sum_alias_to_main_data(self, data: dict, main_emoji_name: str, main_emoji_id: int,
-                               alias_emoji_id: int):
-        count = 'count'
-
-        main_emoji_data = data.pop(main_emoji_id, {count: 0})
-        alias_emoji_data = data.pop(alias_emoji_id, {count: 0})
-
-        if main_emoji_data[count] or alias_emoji_data[count]:
-            temp = {'name': main_emoji_name}
-            temp[count] = main_emoji_data[count] + alias_emoji_data[count]
-            data[main_emoji_id] = temp
-
-        return data
-
-    @admin()
-    @emojidata_group.group(name='alias')
-    async def emojidata_alias(self, ctx: Context):
-        pass
-
-    @admin()
-    @emojidata_alias.command(name='add')
-    async def emojidata_alias_add(self, ctx: Context, main_emoji: str, alias_emoji: str):
-        if self.verify_emoji(main_emoji) and self.verify_emoji(alias_emoji):
-            guild = ctx.guild
-
-            aliases = await self.config.guild(guild).aliases()
-
-            main_emoji_id = self.get_id_custom_emoji(main_emoji)
-            alias_emoji_id = self.get_id_custom_emoji(alias_emoji)
-
-            if alias_emoji_id in list(aliases.values()) + list(aliases.keys()):
-                if alias_emoji_id in aliases.keys():
-                    type_ = "an alias"
-                else:
-                    type_ = "a main"
-
-                embed = Embed(
-                    title="Error",
-                    color=COLOR,
-                    description="Alias already registered as {}.".format(type_)
-                )
-
-            else:
-                aliases[alias_emoji_id] = main_emoji_id
-                await self.config.guild(guild).aliases.set(aliases)
-
-                aliases_names = await self.config.guild(guild).aliases_names()
-
-                main_emoji_name = self.get_name_custom_emoji(main_emoji)
-                aliases_names[main_emoji_name] = (main_emoji_id, False)
-
-                alias_emoji_name = self.get_name_custom_emoji(alias_emoji)
-                aliases_names[alias_emoji_name] = (alias_emoji_id, True)
-
-                await self.config.guild(guild).aliases_names.set(aliases_names)
-
-                 count = 'count'
-
-                guild_data = await self.config.guild(guild).data()
-                guild_data = self.sum_alias_to_main_data(
-                    guild_data,
-                    main_emoji_name,
-                    main_emoji_id,
-                    alias_emoji_id
-                )
-
-                await self.config.guild(guild).data.set(guild_data)
-
-                members = await self.config.all_members(guild)
-                for member_keys in members.values():
-                    member_data = member_keys['data']
-                    member_data = self.sum_alias_to_main_data(
-                        member_data,
-                        main_emoji_name,
-                        main_emoji_id,
-                        alias_emoji_id
-                    )
-
-                await self.config.all_members(guild).set(members)
-
-                embed = Embed(
-                    title="Alias set!",
-                    color=COLOR,
-                    description="Alias emoji data will now"
-                                "be summed with main emoji data."
-                )
-
-        else:
-            embed = Embed(
-                title="Error",
-                color=COLOR,
-                description="Arguments aren't custom emojis."
-            )
-
-        await ctx.send(embed=embed)
-
-    @admin()
-    @emojidata_alias.command(name='remove')
-    async def emojidata_alias_remove(self, ctx: Context, emoji: str):
-        guild = ctx.guild
-
-        aliases_names = await self.config.guild(guild).aliases_names()
-        if self.verify_emoji(emoji):
-            emoji_name = self.get_name_custom_emoji(emoji)
-            emoji_id = self.get_id_custom_emoji(emoji)
-            emoji_data = aliases_names.get(emoji_name, None)
-            if emoji_id not in emoji_data:
-                emoji_data = None
-        else:
-            emoji_name = emoji
-            emoji_data = aliases_names.get(emoji_name, None)
-
-        if emoji_data:
-            aliases = await self.config.guild(guild).aliases()
-            emoji_id, is_alias = emoji_data
-
-            if is_alias:
-                aliases.pop(emoji_id)
-            else:
-                to_remove = list()
-                for alias_id, main_id in aliases.items():
-                    if emoji_id == main_id:
-                        to_remove.append(alias_id)
-                [aliases.pop(alias_id) for alias_id in to_remove]
-
-            await self.config.guild(guild).aliases.set(aliases)
-
-        else:
-            embed = Embed(
-                title="Error",
-                color=COLOR,
-                description="Argument isn't an already assigned custom emoji."
-                            "The aliases might require a reset if emoji isn't"
-                            "available anymore."
-            )
-
-    @mod()
-    @emojidata_alias.command(name='list')
-    async def emojidata_alias_list(self, ctx: Context):
-        guild = ctx.guild
-        aliases_by_alias = await self.config.guild(guild).aliases()
-        aliases_names_by_name = await self.config.guild(guild).aliases_names()
-
-        main_emojis_ids = list(set(aliases_by_alias.values()))
-
-        aliases_by_main = dict()
-        for main_emoji_id in main_emojis_ids:
-            aliases = list()
-            for alias, main in aliases_by_alias.items():
-                if main_emoji_id == main:
-                    aliases.append(alias)
-            aliases_by_main[main_emoji_id] = aliases
-
-        emojis_ids = set()
-        for emoji_id, is_alias in aliases_names_by_name.values():
-            emojis_ids = emojis_ids.union(emoji_id)
-
-        aliases_names_by_id = dict()
-        for emoji_id in emojis_ids:
-            names = list()
-            for name, data in aliases_names_by_name.items():
-                if data[0] == emoji_id:
-                    names.append(name)
-            aliases_names_by_id[emoji_id] = names[0]
-
-        aliases = dict()
-        for main, alias in aliases_by_main.items():
-            main = self.import_emoji(
-                ctx.guild,
-                main,
-                aliases_names_by_id
-            )
-            main = temp_main if temp_main else None
-
-    @admin()
-    @emojidata_alias.command(name='reset')
-    async def emojidata_alias_reset(self, ctx: Context):
-        await ask_reset(
-            bot=self.bot,
-            ctx=ctx,
-            res_func=(
-                self.config.guild(ctx.guild).aliases.clear,
-                self.config.guild(ctx.guild).aliases_names.clear
-            ),
-            obj="Guild emoji data list",
-            message="Write y/n to confirm reset"
-        )
-
-    def import_emoji(self, guild: Guild, emoji_id: int, replacement_name: str):
-        e = get_emoji(guild, emoji_id)
-        if e is None:
-            e = replacement_name
-        return e
-    """
