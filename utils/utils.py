@@ -22,6 +22,54 @@ from typing import (
 from .config import Group
 from .objectify import Objectify
 
+############################################# CLASSES #############################################
+
+class ImprovedList(list):
+    """Some useful functions to explore or transform list content
+    more easily.
+
+    """
+
+    def index(
+        self, v: Any, start: int = 0, stop: int = 9223372036854775807,
+        key: callable = None
+    ) -> int:
+        """Just like `list.index`, but admits a customizable key for
+        easier searches.
+
+        """
+        if not key:
+            def key(x):
+                return x
+
+        for i in range(start, min(len(self), stop)):
+            if key(self[i]) == v:
+                return i
+
+        raise ValueError("Value not found")
+
+    def get_item(
+        self, v: Any, start: int = 0, stop: int = 9223372036854775807,
+        key: callable = None
+    ):
+        """Just like `list.__getitem__`, but admits a customizable key
+        for easier searches.
+
+        """
+        return self[self.index(v=v, start=start, stop=stop, key=key)]
+
+    @staticmethod
+    def flatten(l: Union[list, tuple]):
+        """Flattening generic method for various usages.
+
+        """
+        while any([isinstance(x, (list, tuple)) for x in l]):
+            temp = []
+            for x in l:
+                temp += x if isinstance(x, (list, tuple)) else [x]
+            l = temp
+        return l
+
 ############################################ FUNCTIONS ############################################
 
 async def ask_confirmation(
