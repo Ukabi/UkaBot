@@ -5,9 +5,9 @@ from discord.ext.commands import Context
 
 ############################################# CLASSES #############################################
 
-class BaseDiscordException:
+class BaseDiscordException(BaseException):
     def __init__(
-        self, ctx: Context, title: str = 'Error',
+        self, ctx: Context = None, title: str = 'Error',
         message: str = '', color: int = 0xFF0000
     ):
         self.ctx = ctx
@@ -27,7 +27,7 @@ class BaseDiscordException:
 
 class InvalidArguments(BaseDiscordException):
     def __init__(
-        self, ctx: Context, title: str = 'Invalid Arguments',
+        self, ctx: Context = None, title: str = 'Invalid Arguments',
         message: str = '', color: int = 0xFF0000
     ):
         super().__init__(
@@ -39,7 +39,7 @@ class InvalidArguments(BaseDiscordException):
 
 class CommandNotFound(BaseDiscordException):
     def __init__(
-        self, ctx: Context, title: str = 'Command Not Found',
+        self, ctx: Context = None, title: str = 'Command Not Found',
         message: str = '', color: int = 0xFF0000
     ):
         super().__init__(
