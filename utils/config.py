@@ -428,7 +428,7 @@ class Config:
                 Folder files names
 
         """
-        path_to_folder = f"{self.cog}/{'/'.join(scopes)}"
+        path_to_folder = f"{self.cog}/{'/'.join(map(str, scopes))}"
 
         try:
             files = os.listdir(path_to_folder)

@@ -75,7 +75,7 @@ class EmojiData(Cog):
 
         self.scheduler.start()
 
-    @tasks.loop(hours=1)
+    @tasks.loop(count=1)
     async def scheduler(self):
         guilds_configs = self.config.get_all_guilds()
 
@@ -83,7 +83,8 @@ class EmojiData(Cog):
             guild = self.bot.get_guild(guild_id)
             if guild:
                 guild_data = guild_config.get()
-                print(guild_data)
+                self.current_guild = guild
+
                 await self.treat_guild(
                     guild=guild,
                     last_checked=guild_data[self.LAST_CHECKED]
@@ -103,6 +104,9 @@ class EmojiData(Cog):
 
     def cog_unload(self):
         self.scheduler.cancel()
+        self.update_check(self.current_guild)
+
+        del self
 
     ############################################# CORE ############################################
 

@@ -54,49 +54,51 @@ class Poll(Cog):
         """**[question] | [proposition] | [proposition] | ... ** :
         submits a poll to precised channel.
         """
-        args = [arg.strip() for arg in args.split(sep=self.SEP)]
+        try:
+            args = [arg.strip() for arg in args.split(sep=self.SEP)]
 
-        question = args.pop(0)
+            question = args.pop(0)
 
-        if len(args) in range(1, 10):
-            guild = ctx.guild
-            guild_data = self.config.guild(guild).get()
+            if len(args) in range(1, 10):
+                guild = ctx.guild
+                guild_data = self.config.guild(guild).get()
 
-            answers_list = [f'{self.FIGURES[n+1]}: {p}' for n, p in enumerate(args)]
-            answers = "\n\n".join(answers_list)
+                answers_list = [f'{self.FIGURES[n+1]}: {p}' for n, p in enumerate(args)]
+                answers = "\n\n".join(answers_list)
 
-            channel = guild.get_channel(guild_data[self.CHANNEL])
-            if channel:
-                embed = Embed(
-                    title=question,
-                    description=answers
-                )
-                message = await channel.send(embed=embed)
-                for n in range(1, len(answers_list) + 1):
-                    await message.add_reaction(self.FIGURES[n])
+                channel = guild.get_channel(guild_data[self.CHANNEL])
+                if channel:
+                    embed = Embed(
+                        title=question,
+                        description=answers
+                    )
+                    message = await channel.send(embed=embed)
+                    for n in range(1, len(answers_list) + 1):
+                        await message.add_reaction(self.FIGURES[n])
 
-                embed = Embed(
-                    title='Poll sent',
-                    description=f'Poll successfully sent to {channel.mention}'
-                )
-                await ctx.send(embed=embed)
+                    embed = Embed(
+                        title='Poll sent',
+                        description=f'Poll successfully sent to {channel.mention}'
+                    )
+                    await ctx.send(embed=embed)
+
+                else:
+                    raise InvalidArguments(
+                        ctx=ctx,
+                        title='Channel Error',
+                        message='Channel not found or not provided'
+                    )
 
             else:
-                error = InvalidArguments(
+                raise InvalidArguments(
                     ctx=ctx,
-                    title='Channel Error',
-                    message='Channel not found or not provided'
+                    message=(
+                        "Arguments couldn't be parsed" + "\n"
+                        "Check separator or answer count (9 max)"
+                    )
                 )
-                await error.execute()
 
-        else:
-            error = InvalidArguments(
-                ctx=ctx,
-                message=(
-                    "Arguments couldn't be parsed" + "\n"
-                    "Check separator or answer count (9 max)"
-                )
-            )
+        except InvalidArguments as error:
             await error.execute()
 
     @admin()
