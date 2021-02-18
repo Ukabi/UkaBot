@@ -150,15 +150,12 @@ class Birthday(Cog):
 
     @tasks.loop(hours=24)
     async def scheduler(self):
+        print("New day!")
         guilds_configs = self.config.get_all_guilds()
-
         for guild_id, guild_config in guilds_configs.items():
             guild = self.bot.get_guild(guild_id)
-
             if guild:
-                guild_data = guild_config.get()
-
-                await self.treat_guild(guild, guild_data)
+                await self.treat_guild(guild)
 
     @scheduler.before_loop
     async def before_scheduler(self):
