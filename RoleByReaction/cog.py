@@ -3,6 +3,7 @@
 #################### DISCORD ####################
 from discord import (
     Embed,
+    Emoji,
     Guild,
     Message,
     Member,
@@ -72,6 +73,8 @@ class RoleByReaction(Cog):
 
     def cog_unload(self):
         self.scheduler.cancel()
+        del self
+
         print("ROLEBYREACTION_COG: Scheduler stopped")
 
     ########################################## SCHEDULER ##########################################
@@ -172,6 +175,9 @@ class RoleByReaction(Cog):
         self, guild: Guild,
         guild_data: Dict[str, Union[int, str, List[Dict[str, Union[int, str]]]]]
     ):
+        guild_config = self.config.guild(guild)
+        guild_data = guild_config.get()
+
         message_id = guild_data[self.MESSAGE]
         combinations = guild_data[self.COMBINATIONS]
         try:
@@ -206,14 +212,10 @@ class RoleByReaction(Cog):
     @tasks.loop(seconds=5)
     async def scheduler(self):
         guilds_configs = self.config.get_all_guilds()
-
         for guild_id, guild_config in guilds_configs.items():
             guild = self.bot.get_guild(guild_id)
-
             if guild:
-                guild_data = guild_config.get()
-
-                await self.treat_guild(guild, guild_data)
+                await self.treat_guild(guild)
 
     @scheduler.before_loop
     async def before_scheduler(self):

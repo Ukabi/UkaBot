@@ -96,10 +96,10 @@ async def ask_confirmation(
 
     """
     def check(m):
-        return not any([                               # and(conditions) <=> not or(not conditions)
-            m.channel != ctx.channel,                                            # channel matching
-            m.author != ctx.message.author,                                       # author matching
-            m.content.lower()[0] not in "yn" if m.content else True              # content matching
+        return all([
+            m.channel == ctx.channel,                                            # channel matching
+            m.author == ctx.message.author,                                       # author matching
+            m.content.lower()[0] in "yn" if m.content else False                 # content matching
         ])                                                   # (with special case being empty case)
 
     await ctx.send(message, file=file)
