@@ -171,10 +171,7 @@ class RoleByReaction(Cog):
                 roles = [guild.get_role(role) for role in roles]
                 await member.remove_roles(*roles)
 
-    async def treat_guild(
-        self, guild: Guild,
-        guild_data: Dict[str, Union[int, str, List[Dict[str, Union[int, str]]]]]
-    ):
+    async def treat_guild(self, guild: Guild):
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
 
