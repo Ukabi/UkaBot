@@ -34,6 +34,7 @@ from utils import (
 )
 from utils import (
     ask_confirmation,
+    can_give_role,
     update_config
 )
 from utils.checks import (
@@ -145,7 +146,7 @@ class Birthday(Cog):
 
         role_id = guild_data[self.ROLE]
         role = guild.get_role(role_id)
-        if role:
+        if role and can_give_role(role, guild.me):
             await self.treat_role(role, to_treat)
 
     @tasks.loop(hours=24)
