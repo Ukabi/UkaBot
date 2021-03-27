@@ -3,7 +3,9 @@
 #################### DISCORD ####################
 from discord import (
     Embed,
-    File
+    File,
+    Member,
+    Role
 )
 from discord.ext.commands import (
     Bot,
@@ -16,6 +18,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Tuple,
     Union
 )
 
@@ -32,7 +35,7 @@ class ImprovedList(list):
 
     def index(
         self, v: Any, start: int = 0, stop: int = 9223372036854775807,
-        key: callable = None
+        key: function = None
     ) -> int:
         """Just like `list.index`, but admits a customizable key for
         easier searches.
@@ -51,7 +54,7 @@ class ImprovedList(list):
     def get_item(
         self, v: Any, start: int = 0, stop: int = 9223372036854775807,
         key: callable = None
-    ):
+    ) -> Any:
         """Just like `list.__getitem__`, but admits a customizable key
         for easier searches.
 
@@ -59,7 +62,7 @@ class ImprovedList(list):
         return self[self.index(v=v, start=start, stop=stop, key=key)]
 
     @staticmethod
-    def flatten(l: Union[list, tuple]):
+    def flatten(l: Union[list, tuple]) -> list:
         """Flattening generic method for various usages.
 
         """
@@ -68,14 +71,15 @@ class ImprovedList(list):
             for x in l:
                 temp += x if isinstance(x, (list, tuple)) else [x]
             l = temp
-        return l
+        return list(l)
 
 ############################################ FUNCTIONS ############################################
 
 async def ask_confirmation(
     ctx: Context, bot: Bot, file: File = None,
-    message: str = "Type y/n to confirm"
-):
+    message: str = "Type y/n to confirm",
+    conditions: Tuple[str and str] = ("y", "n")
+) -> bool:
     """A general confirmation message request.
 
     Parameters
@@ -88,23 +92,50 @@ async def ask_confirmation(
         message: `str = "Type y/n to confirm"`
             The message that will tell the `User` that a confirmation
             is required
-    
+        condition: `Tuple[str and str] = ("y", "n")`
+            The yes or no pass condition
+
     Returns
         `bool`
-            `True` if `User` replies with `y`,
-            or `False` if they reply with `n`
+            `True` if Union[`User`, `Member`] replies with "yes"
+            condition (default: y), or `False` if they reply with
+            "no" condition (default: n)
 
     """
     def check(m):
         return all([
             m.channel == ctx.channel,                                            # channel matching
             m.author == ctx.message.author,                                       # author matching
-            m.content.lower()[0] in "yn" if m.content else False                 # content matching
+            m.content.lower()[0] in conditions if m.content else False            # content matching
         ])                                                   # (with special case being empty case)
 
     await ctx.send(message, file=file)
     confirm = await bot.wait_for('message', check=check)
-    return confirm.content.lower().startswith("y")
+    return confirm.content.lower().startswith(conditions[0])
+
+def can_give_role(role: Role, client: Member) -> bool:
+    """Determines whether `Member` can give provided `Role` or not.
+
+    Parameters
+        role: `Role`
+            The `Role` to compare
+        client: `Member`
+            The `Member` to compare
+
+    Returns
+        `bool`
+            `True` if client highest role with right is above role,
+            else `False`
+
+    """
+    def condition(r: Role):
+        perms = r.permissions
+        return r and (perms.administrator or perms.manage_roles)
+
+    client_roles_with_rights = [r for r in client.roles if condition(r)]
+    client_max_rank = max([r.position for r in client_roles_with_rights])
+
+    return role.position < client_max_rank
 
 def update_config(
     config: Group, attribute: str,
