@@ -15,6 +15,7 @@ from discord.ext.commands import (
 ##################### UTILS #####################
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -35,7 +36,7 @@ class ImprovedList(list):
 
     def index(
         self, v: Any, start: int = 0, stop: int = 9223372036854775807,
-        key: function = None
+        key: Callable = None
     ) -> int:
         """Just like `list.index`, but admits a customizable key for
         easier searches.
@@ -53,7 +54,7 @@ class ImprovedList(list):
 
     def get_item(
         self, v: Any, start: int = 0, stop: int = 9223372036854775807,
-        key: callable = None
+        key: Callable = None
     ) -> Any:
         """Just like `list.__getitem__`, but admits a customizable key
         for easier searches.
