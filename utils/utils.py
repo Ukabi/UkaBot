@@ -78,7 +78,7 @@ class ImprovedList(list):
 
 async def ask_confirmation(
     ctx: Context, bot: Bot, file: File = None,
-    message: str = "Type y/n to confirm",
+    message: str = "Type {}/{} to confirm",
     conditions: Tuple[str and str] = ("y", "n")
 ) -> bool:
     """A general confirmation message request.
@@ -90,7 +90,7 @@ async def ask_confirmation(
             The `Bot`
         file: `File = None`
             The `File` to send
-        message: `str = "Type y/n to confirm"`
+        message: `str = "Type {}/{} to confirm"`
             The message that will tell the `User` that a confirmation
             is required
         condition: `Tuple[str and str] = ("y", "n")`
@@ -105,12 +105,12 @@ async def ask_confirmation(
     """
     def check(m):
         return all([
-            m.channel == ctx.channel,                                            # channel matching
-            m.author == ctx.message.author,                                       # author matching
-            m.content.lower()[0] in conditions if m.content else False            # content matching
-        ])                                                   # (with special case being empty case)
+            m.channel == ctx.channel,       # channel matching
+            m.author == ctx.message.author, # author matching
+            m.content.lower().split()[0] in conditions if m.content else False
+        ])    # ^ content matching (with special case being empty case ^)
 
-    await ctx.send(message, file=file)
+    await ctx.send(message.format(*conditions), file=file)
     confirm = await bot.wait_for('message', check=check)
     return confirm.content.lower().startswith(conditions[0])
 
