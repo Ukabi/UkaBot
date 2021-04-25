@@ -1,6 +1,7 @@
 ############################################# IMPORTS #############################################
 
 #################### DISCORD ####################
+from discord import Intents
 from discord.ext.commands import (
     Bot,
     Cog,
@@ -62,7 +63,11 @@ while not TOKEN:
         BOT_CONFIG['token'] = TOKEN
         write(CONFIG_PATH, BOT_CONFIG)
 
-bot = Bot(command_prefix=PREFIX)
+intents = Intents.all()
+bot = Bot(
+    command_prefix=PREFIX,
+    intents=intents
+)
 
 ############################################ FUNCTIONS ############################################
 
