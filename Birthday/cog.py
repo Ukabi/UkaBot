@@ -162,7 +162,7 @@ class Birthday(Cog):
 
     async def scheduler(self):
         while self.on:
-            self.wait_for_tomorrow()
+            await self.wait_for_tomorrow()
 
             if self.on:
                 print("New day!")
