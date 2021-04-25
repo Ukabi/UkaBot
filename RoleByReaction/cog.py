@@ -421,7 +421,7 @@ class RoleByReaction(Cog):
                     message=f"Role {role} already used"
                 )
 
-            if not can_give_role(role, ctx):
+            if not can_give_role(role, ctx.me):
                 raise InvalidArguments(
                     ctx=ctx,
                     title="Role Error",
