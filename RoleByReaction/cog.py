@@ -12,7 +12,6 @@ from discord import (
     Role
 )
 from discord import NotFound
-from discord.ext import tasks
 from discord.ext.commands import (
     BadArgument,
     Bot,

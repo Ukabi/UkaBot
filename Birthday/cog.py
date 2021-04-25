@@ -7,7 +7,6 @@ from discord import (
     TextChannel,
     Role
 )
-from discord.ext import tasks
 from discord.ext.commands import (
     Bot,
     Cog,

@@ -11,7 +11,6 @@ from discord import (
     User
 )
 from discord.abc import GuildChannel
-from discord.ext import tasks
 from discord.ext.commands import (
     BadArgument,
     Bot,
