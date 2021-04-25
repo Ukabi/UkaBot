@@ -88,13 +88,14 @@ class Birthday(Cog):
         }
         self.config.defaults_member(self.defaults_member)
 
-        self.scheduler.start()
+        self.on = True
+        self.bot.loop.create_task(self.scheduler())
         print("BIRTHDAY_COG: Scheduler started.")
 
     ########################################### UNLOADER ##########################################
 
     def cog_unload(self):
-        self.scheduler.cancel()
+        self.on = False
         del self
 
         print("BIRTHDAY_COG: Scheduler stopped.")
@@ -149,23 +150,27 @@ class Birthday(Cog):
         if role and can_give_role(role, guild.me):
             await self.treat_role(role, to_treat)
 
-    @tasks.loop(hours=24)
-    async def scheduler(self):
-        print("New day!")
-        guilds_configs = self.config.get_all_guilds()
-        for guild_id, guild_config in guilds_configs.items():
-            guild = self.bot.get_guild(guild_id)
-            if guild:
-                await self.treat_guild(guild)
-
-    @scheduler.before_loop
-    async def before_scheduler(self):
-        await self.bot.wait_until_ready()
-
+    async def wait_for_tomorrow(self):
         now = dt.now()
         date = dt.fromordinal(dt.today().toordinal())
         next_day = date + td(days=1)
-        await sleep((next_day - now).total_seconds())
+        wait_time = (next_day - now).total_seconds()
+        await sleep(
+            wait_time,
+            loop=self.bot.loop
+        )
+
+    async def scheduler(self):
+        while self.on:
+            self.wait_for_tomorrow()
+
+            if self.on:
+                print("New day!")
+                guilds_configs = self.config.get_all_guilds()
+                for guild_id, guild_config in guilds_configs.items():
+                    guild = self.bot.get_guild(guild_id)
+                    if guild:
+                        await self.treat_guild(guild)
 
     ###################################### BIRTHDAY COMMANDS ######################################
 
