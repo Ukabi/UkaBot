@@ -71,12 +71,11 @@ class RoleByReaction(Cog):
         }
         self.config.defaults_guild(self.defaults_guild)
 
-        self.scheduler.start()
+        self.bot.loop.create_task(self.startup_check())
 
     ########################################### UNLOADER ##########################################
 
     def cog_unload(self):
-        self.scheduler.cancel()
         del self
 
     ########################################## SCHEDULER ##########################################
@@ -216,21 +215,14 @@ class RoleByReaction(Cog):
         except InvalidArguments:
             pass
 
-    @tasks.loop(count=1)
-    async def scheduler(self):
+    async def startup_check(self):
+        await self.bot.wait_until_ready()
+
         guilds_configs = self.config.get_all_guilds()
         for guild_id, guild_config in guilds_configs.items():
             guild = self.bot.get_guild(guild_id)
             if guild:
                 await self.treat_guild(guild)
-
-    @scheduler.before_loop
-    async def before_scheduler(self):
-        await self.bot.wait_until_ready()
-
-    @scheduler.after_loop
-    async def after_scheduler(self):
-        self.scheduler.stop()
 
     ########################################### EVENTS ############################################
 

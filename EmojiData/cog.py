@@ -73,10 +73,11 @@ class EmojiData(Cog):
         self.default_member = {}
         self.config.defaults_member(self.default_member)
 
-        self.scheduler.start()
+        self.bot.loop.create_task(self.startup_check())
 
-    @tasks.loop(count=1)
-    async def scheduler(self):
+    async def startup_check(self):
+        await self.bot.wait_until_ready()
+
         guilds_configs = self.config.get_all_guilds()
 
         for guild_id, guild_config in guilds_configs.items():
@@ -92,18 +93,9 @@ class EmojiData(Cog):
 
                 self.update_check(guild)
 
-    @scheduler.before_loop
-    async def before_scheduler(self):
-        await self.bot.wait_until_ready()
-
-    @scheduler.after_loop
-    async def after_scheduler(self):
-        self.scheduler.stop()
-
     ########################################### UNLOADER ##########################################
 
     def cog_unload(self):
-        self.scheduler.cancel()
         self.update_check(self.current_guild)
 
         del self
