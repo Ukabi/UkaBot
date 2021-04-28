@@ -19,8 +19,10 @@ from discord.ext.commands import BadArgument
 
 ##################### UTILS #####################
 from asyncio import sleep
-from datetime import datetime as dt
-from datetime import timedelta as td
+from datetime import (
+    datetime as dt,
+    timedelta as td
+)
 from typing import (
     Dict,
     List,
@@ -62,15 +64,17 @@ class Birthday(Cog):
     BIRTHDAY = "birthday"
     NAME = "name"
 
-    # For Birthday config
+    # For Member.Birthday config
     DAY = "day"
     MONTH = "month"
 
     ######################################### CONSTRUCTOR #########################################
 
     def __init__(self, bot: Bot):
-        self.config = Cfg(self)
+        super().__init__()
         self.bot = bot
+
+        self.config = Cfg(self)
 
         self.defaults_guild = {
             self.CHANNEL: 0,
@@ -101,17 +105,20 @@ class Birthday(Cog):
 
     ########################################## SCHEDULER ##########################################
 
-    def update_names(self, members_configs: Dict[Member, Group]):
+    @staticmethod
+    def update_names(members_configs: Dict[Member, Group]):
         for member, group in members_configs.items():
             member_data = group.get()
-            member_data[self.NAME] = member.name
+            member_data.name = member.name
             group.set(member_data)
 
-    async def treat_members(self, channel: TextChannel, members: List[Member]):
+    @staticmethod
+    async def treat_members(channel: TextChannel, members: List[Member]):
         for member in members:
             await channel.send(f":tada: Happy birthday {member.mention}!!! :cake:")
 
-    async def treat_role(self, role: Role, to_treat: List[Member]):
+    @staticmethod
+    async def treat_role(role: Role, to_treat: List[Member]):
         for member in role.guild.members:
             roles = member.roles
 
@@ -126,25 +133,25 @@ class Birthday(Cog):
         guild_data = guild_config.get()
 
         members_configs = self.config.get_all_members(guild)
-        members_configs = {guild.get_member(k): v for k, v in members_configs.items()}
-        members_configs = {k: v for k, v in members_configs.items() if k}
+        members_configs = {guild.get_member(i): g for i, g in members_configs.items()}
+        members_configs = {m: g for m, g in members_configs.items() if m}
 
         self.update_names(members_configs)
 
-        members_birthdays = {k: v.get()[self.BIRTHDAY] for k, v in members_configs.items()}
+        m_birthdays = {m: g.get().birthday for m, g in members_configs.items()}
 
         date = {
             self.DAY: dt.now().day,
             self.MONTH: dt.now().month
         }
-        to_treat = [m for m, b in members_birthdays.items() if date == b]
+        to_treat = [m for m, b in m_birthdays.items() if date == b]
 
-        channel_id = guild_data[self.CHANNEL]
+        channel_id = guild_data.channel
         channel = guild.get_channel(channel_id)
         if channel:
             await self.treat_members(channel, to_treat)
 
-        role_id = guild_data[self.ROLE]
+        role_id = guild_data.role
         role = guild.get_role(role_id)
         if role and can_give_role(role, guild.me):
             await self.treat_role(role, to_treat)
@@ -184,9 +191,7 @@ class Birthday(Cog):
 
     @admin()
     @birthday_group.command(name='channel')
-    async def birthday_channel(
-        self, ctx: Context, *, channel: Union[int, str, TextChannel]
-    ):
+    async def birthday_channel(self, ctx: Context, *, channel: Union[int, str, TextChannel]):
         """**[#channel or channel name]** :
         sets the channel where to send notifiations.
         """
@@ -223,7 +228,16 @@ class Birthday(Cog):
         try:
             if not isinstance(role, Role):
                 role = await RoleConverter().convert(ctx, str(role))
+        except BadArgument:
+            error = InvalidArguments(
+                ctx=ctx,
+                title='Role Error',
+                message='Role not found or not provided'
+            )
+            await error.execute()
+            return
 
+        else:
             update_config(
                 config=self.config.guild(ctx.guild),
                 attribute=self.ROLE,
@@ -236,24 +250,26 @@ class Birthday(Cog):
             )
             await ctx.send(embed=embed)
 
-        except BadArgument:
-            error = InvalidArguments(
-                ctx=ctx,
-                title='Role Error',
-                message='Role not found or not provided'
-            )
-            await error.execute()
-
     @birthday_group.command(name='set')
     async def birthday_set(self, ctx: Context, day: int, month: int):
         """**[day] [month]** : Sets birthday date. Will send a server notification
          on the precised day.
         """
-        try:
-            day = f"0{day}" if day < 10 else str(day)
-            month = f"0{month}" if month < 10 else str(month)
-            date = time.strptime(f"{day} {month}", "%d %m")
+        day = f"0{day}" if day < 10 else str(day)
+        month = f"0{month}" if month < 10 else str(month)
 
+        try:
+            date = time.strptime(f"{day} {month}", "%d %m")
+        except ValueError:
+            error = InvalidArguments(
+                ctx=ctx,
+                title="Date Error",
+                message="Couldn't understand provided date"
+            )
+            await error.execute()
+            return
+
+        else:
             member = ctx.author
             member_config = self.config.member(member)
 
@@ -272,14 +288,6 @@ class Birthday(Cog):
                 description=f"Birthday set to {date.tm_mday} {self.MONTHS[date.tm_mon - 1]}"
             )
             await ctx.send(embed=embed)
-
-        except ValueError:
-            error = InvalidArguments(
-                ctx=ctx,
-                title="Date Error",
-                message="Couldn't understand provided date"
-            )
-            await error.execute()
 
     @birthday_group.command(name='remove')
     async def birthday_remove(self, ctx: Context):
@@ -304,29 +312,27 @@ class Birthday(Cog):
         guild = ctx.guild
         members_configs = self.config.get_all_members(guild)
 
-        members_data = {k: v.get() for k, v in members_configs.items()}
+        members_data = {i: g.get() for i, g in members_configs.items()}
 
         members_birthdays = dict()
         for member_id, member_data in members_data.items():
             member = guild.get_member(member_id)
-            if member:
-                member_name = member.name
-            else:
-                member_name = member_data[self.NAME]
-            
-            birthday = member_data[self.BIRTHDAY]
+
+            member_name = member.name if member else member_data.name
+
+            birthday = member_data.birthday
             if birthday != {self.DAY: None, self.MONTH: None}:
-                members_birthdays[member_name] = member_data[self.BIRTHDAY]
-        
+                members_birthdays[member_name] = member_data.birthday
+
         if members_birthdays:
             members, birthdays = [l for l in zip(*(members_birthdays.items()))]
-            days, months = [l for l in zip(*[(b[self.DAY], b[self.MONTH]) for b in birthdays])]
+            days, months = [l for l in zip(*[(b.day, b.month) for b in birthdays])]
             order = np.lexsort((members, days, months))
             sorted_birthdays = [(members[i], birthdays[i]) for i in order]
 
             message = ""
             for member, birthday in sorted_birthdays:
-                message += f"{member} - {birthday[self.DAY]}/{birthday[self.MONTH]}" + "\n"
+                message += f"{member} - {birthday.day}/{birthday.month}" + "\n"
 
             embed = Embed(
                 title="Birthdays List",
