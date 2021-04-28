@@ -20,7 +20,11 @@ from typing import (
 )
 
 from .objectify import Objectify
-from .objectify import str_key_dict
+from .objectify import (
+    dictify,
+    objectify
+)
+from .utils import _str_key_json
 
 ############################################# CLASSES #############################################
 
@@ -30,53 +34,54 @@ class Group:
     Parameters
         file: `str`
             The path to config file
-        defaults: `Union[List[Any], Dict[str, Any]] = {}`
+        defaults: Union[`list`, Dict[str, Any]] = `{}`
             The default value if file doesn't exist
-        to_object: `bool = False`
+        to_object: `bool` = `False`
             Determines if the `Group.data` attribute is either an
-            `Union[List[Objectify], Objectify]` instance or an
-            `Union[List[Any], Dict[str, Any]]` instance
+            Union[List[`Objectify`], `Objectify`] instance or an
+            Union[List[Any], Dict[`str`, Any]] instance
 
     """
     def __init__(
-        self, file: str, defaults: Union[List[Any], Dict[str, Any]] = {},
-        to_object: bool = False
+        self, file: str, defaults: Union[list, Dict[str, Any]] = {}, to_object: bool = False
     ):
         self.file = file
+        self.to_object = to_object
         self.data = load(
             self.file,
             if_error=defaults,
             to_object=to_object
         )
 
-    def __repr__(self):
-        return str(Objectify.dictify(self.data))
+    def __repr__(self) -> str:
+        return str(dictify(self.data))
 
     def get(self) -> Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]:
         """Returns the config file data.
 
         Returns
-            `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
+            Union[List[`Objectify`], `Objectify`, List[Any], Dict[`str`, Any]]
                 Config file data
-                Instance of `Union[List[Objectify], Objectify]` if
+                Instance of Union[List[`Objectify`], `Objectify`] if
                 `Group.to_object` is set to `True`, else instance of
-                `Union[List[Any], Dict[str, Any]]`
+                Union[List[Any], Dict[str, Any]]
 
         """
         return self.data
 
-    def set(
-        self, data: Union[List[Objectify], Objectify, List[Any], Dict[Any, Any]]
-    ):
+    def set(self, data: Union[List[Objectify], Objectify, list, Dict[Any, Any]]):
         """Overwrite previous data to new given value.
 
         Parameters
-            data: `Union[List[Objectify], Objectify, List[Any], Dict[Any, Any]]`
+            data: Union[List[`Objectify`], `Objectify`, `list`, Dict[Any, Any]]
                 The data to set
 
         """
         write(self.file, data)
-        self.data = data
+        if self.to_object:
+            self.data = objectify(data)
+        else:
+            self.data = dictify(data)
 
 class Config:
     """Represents a `Cog` configuration files tree.
@@ -87,15 +92,14 @@ class Config:
     Parameters
         cog: `Cog`
             The `Cog` to represent
-        to_object: `bool = False`
+        to_object: `bool` = `False`
             Determines if the `Group.data` attribute is either an
-            `Union[List[`Objectify`], `Objectify`]` instance or an
-            `Union[List[Any], Dict[str, Any]]` instance
-        **defaults: `Dict[str, Union[List[Any], Dict[str, Any]]]`
-            The value to set to any new file created, if not
-            provided, defaults to `{}`
-            Supported key arguments : globals, guild, channel, role,
-            user, member
+            Union[List[`Objectify`], `Objectify`] instance or an
+            Union[`list`, Dict[`str`, Any]] instance
+        **defaults: Union[`list`, Dict[`str`, Any]]
+            The value to set to any new file created,
+            if not provided, defaults to `{}`
+            Supported keys: globals, guild, channel, role, user, member
             Example: `guild={'foo': []}` will initiate any new guild
             configuation file to `{'foo': []}`
 
@@ -107,11 +111,11 @@ class Config:
     USER = "user"
     MEMBER = "member"
 
-    EXTENTION = ".json"
+    EXTENSION = ".json"
 
     def __init__(
         self, cog: Cog = None, to_object: bool = False,
-        **defaults: Dict[str, Union[List[Any], Dict[str, Any]]]
+        **defaults: Union[list, Dict[str, Any]]
     ):
         if not cog or not isinstance(cog, Cog):
             raise NameError('Cog must be provided')
@@ -126,61 +130,61 @@ class Config:
             self.defaults_user(defaults.pop(self.USER, {}))
             self.defaults_member(defaults.pop(self.MEMBER, {}))
 
-    def defaults_globals(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+    def defaults_globals(self, defaults: Union[list, Dict[str, Any]] = {}):
         """Sets default value for global configuration files.
 
         Parameters
-            defaults: `Union[List[Any], Dict[str, Any]] = {}`
+            defaults: Union[`list`, Dict[`str`, Any]] = `{}`
                 The default value to parse
 
         """
         self.defaults = defaults
 
-    def defaults_guild(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+    def defaults_guild(self, defaults: Union[list, Dict[str, Any]] = {}):
         """Sets default value for `Guild` configuration files.
 
         Parameters
-            defaults: `Union[List[Any], Dict[str, Any]] = {}`
+            defaults: Union[`list`, Dict[`str`, Any]] = `{}`
                 The default value to parse
 
         """
         self.defaults_g = defaults
 
-    def defaults_channel(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+    def defaults_channel(self, defaults: Union[list, Dict[str, Any]] = {}):
         """Sets default value for `GuildChannel` configuration files.
 
         Parameters
-            defaults: `Union[List[Any], Dict[str, Any]] = {}`
+            defaults: Union[`list`, Dict[`str`, Any]] = `{}`
                 The default value to parse
 
         """
         self.defaults_c = defaults
 
-    def defaults_role(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+    def defaults_role(self, defaults: Union[list, Dict[str, Any]] = {}):
         """Sets default value for `Role` configuration files.
 
         Parameters
-            defaults: `Union[List[Any], Dict[str, Any]] = {}`
+            defaults: Union[`list`, Dict[`str`, Any]] = `{}`
                 The default value to parse
 
         """
         self.defaults_r = defaults
 
-    def defaults_user(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+    def defaults_user(self, defaults: Union[list, Dict[str, Any]] = {}):
         """Sets default value for `User` configuration files.
 
         Parameters
-            defaults: `Union[List[Any], Dict[str, Any]] = {}`
+            defaults: Union[`list`, Dict[`str`, Any]] = `{}`
                 The default value to parse
 
         """
         self.defaults_u = defaults
 
-    def defaults_member(self, defaults: Union[List[Any], Dict[str, Any]] = {}):
+    def defaults_member(self, defaults: Union[list, Dict[str, Any]] = {}):
         """Sets default value for `Member` configuration files.
 
         Parameters
-            defaults: `Union[List[Any], Dict[str, Any]] = {}`
+            defaults: Union[`list`, Dict[`str`, Any]] = `{}`
                 The default value to parse
 
         """
@@ -193,9 +197,9 @@ class Config:
         as a `Group` instance.
 
         Parameters
-            *primary keys: `List[str]`
+            *primary keys: List[`str`]
                 The keys leading to configuration file
-                Example: `self.get_file('foo', 'bar') -> '{self.cog}/foo/bar.json'`
+                Example: `self.get_file('foo', 'bar')` -> `'{self.cog}/foo/bar.json'`
 
         Returns
             `Group`
@@ -204,7 +208,7 @@ class Config:
         """
         path = f"{self.cog}/"
         path += "/".join(primary_keys) if primary_keys else self.GLOBALS
-        path += self.EXTENTION
+        path += self.EXTENSION
 
         return Group(
             path,
@@ -424,7 +428,7 @@ class Config:
         Returns
             `str`
                 Path to folder
-            `List[str]`
+            List[`str`]
                 Folder files names
 
         """
@@ -432,7 +436,7 @@ class Config:
 
         try:
             files = os.listdir(path_to_folder)
-            files = [file for file in files if file.endswith(self.EXTENTION)]
+            files = [file for file in files if file.endswith(self.EXTENSION)]
         except FileNotFoundError:
             mkdir_p(path_to_folder)
             files = list()
@@ -448,7 +452,7 @@ class Config:
                 The path elements leading to directory
 
         Returns
-            `Dict[str, Group]`
+            Dict[`str`, `Group`]
 
         """
         path_to_folder, files = self.get_folder(*scopes)
@@ -456,15 +460,15 @@ class Config:
         paths = [f"{path_to_folder}/{file}" for file in files]
         groups = [Group(path, to_object=self.to_object) for path in paths]
 
-        files_without_extention = [file[:-len(self.EXTENTION)] for file in files]
-        return {f: g for f, g in zip(files_without_extention, groups)}
+        files_without_extension = [file[:-len(self.EXTENSION)] for file in files]
+        return {f: g for f, g in zip(files_without_extension, groups)}
 
     def get_all_guilds(self) -> Dict[int, Group]:
         """Returns a dict composed of `Guild` ids as keys and
         `Group` corresponding to `Guild` as values.
 
         Returns
-            `Dict[int, Group]`
+            Dict[`int`, `Group`]
 
         """
         return {int(k): v for k, v in self.get_all(self.GUILD).items()}
@@ -474,7 +478,7 @@ class Config:
         `Group` corresponding to `GuildChannel` as values.
 
         Returns
-            `Dict[int, Group]`
+            Dict[`int`, `Group`]
 
         """
         return {int(k): v for k, v in self.get_all(self.CHANNEL).items()}
@@ -484,7 +488,7 @@ class Config:
         `Group` corresponding to `Role` as values.
 
         Returns
-            `Dict[int, Group]`
+            Dict[`int`, `Group`]
 
         """
         return {int(k): v for k, v in self.get_all(self.ROLE).items()}
@@ -494,7 +498,7 @@ class Config:
         `Group` corresponding to `User` as values.
 
         Returns
-            `Dict[int, Group]`
+            Dict[`int`, `Group`]
 
         """
         return {int(k): v for k, v in self.get_all(self.USER).items()}
@@ -509,7 +513,7 @@ class Config:
                 The `Guild`
 
         Returns
-            `Dict[int, Group]`
+            Dict[`int`, `Group`]
 
         """
         return {int(k): v for k, v in self.get_all(self.MEMBER, guild.id).items()}
@@ -524,18 +528,16 @@ class Config:
                 The `Guild` id
 
         Returns
-            `Dict[int, Group]`
+            Dict[`int`, `Group`]
 
         """
         return {int(k): v for k, v in self.get_all(self.MEMBER, guild_id).items()}
 
-    def clear_folder(
-        self, *scopes: str, defaults: Union[List[Any], Dict[str, Any]] = {}
-    ):
+    def clear_folder(self, *scopes: str, defaults: Union[list, Dict[str, Any]] = {}):
         """Sets to default every `Group` in requested path.
 
         Parameters
-            defaults: `Union[List[Any], Dict[str, Any]] = {}`
+            defaults: Union[list, Dict[str, Any]] = `{}`
                 The default value to write
             *scopes: `str`
                 The path keys to targeted folder
@@ -635,20 +637,20 @@ def safe_open(path: str, mode: str) -> open:
 
 def load(
     path: str, if_error: Union[list, dict] = [], to_object: bool = False
-    ) -> Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]:
+) -> Union[List[Objectify], Objectify, list, dict]:
     """Loads data from file path, as a json data file.
 
     Parameters
         path: `str`
             Desired file location path
-        if_error: `Union[list, dict] = []`
+        if_error: Union[`list`, `dict`] = `[]`
             Value to return if file doesn't exist
         to_object: `bool = False`
-            Automatically casts data to an `Objectify` or `List[Objectify]` object if
-            `True`, or keeps data as a simple `Dict[str, Any]` or `List[Any]` if `False`
+            Automatically casts data to an `Objectify` or `List[Objectify]` object
+            if `True`, or keeps data as a simple `dict` or `list` if `False`
     
     Returns
-        `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
+        Union[List[`Objectify`], `Objectify`, `list`, `dict`]
             The extracted data from requested path
 
     """
@@ -658,22 +660,20 @@ def load(
     except FileNotFoundError or NotADirectoryError:
         write(path, if_error)
         data = if_error
-    return Objectify.objectify(data) if to_object else data
+    return objectify(data) if to_object else data
 
-def write(
-    path: str,
-    data: Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]
-):
+def write(path: str, data: Union[list, dict, Objectify]):
     """Writes data to path, as a json data file.
 
     Parameters
         path: `str`
             Desired file location path
-        data: `Union[List[Objectify], Objectify, List[Any], Dict[str, Any]]`
-            The data to write in file
+        data: Union[`list`, `dict`, `Objectify`]
+            The json-like data to write in file
 
     """
-    data = Objectify.dictify(data)
-    data = str_key_dict(data) if isinstance(data, dict) else data
+    data = dictify(data)
+    if isinstance(data, dict):
+        data = _str_key_json(data)
     with safe_open(path, 'w') as file:
         file.write(json.dumps(data))
