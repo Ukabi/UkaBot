@@ -3,44 +3,44 @@
 from typing import (
     Any,
     Dict,
+    Iterable,
     List,
     Union
 )
 
+############################################# GLOBALS #############################################
+
+FORBIDDEN_KEYS = [                                          # list of impossible attributes for
+    "__base__", "__bases__", "__class__", "__dict__",       # `Objectify` class defined bellow
+    "__module__", "__weakref__", *(dict.__dict__.keys())    # else creates infinite loops since
+]                                                           # `dict.__getattribute__` is redefined
+
 ############################################# CLASSES #############################################
 
-class Objectify:
+class Objectify(dict):
     """A more intuitive way to manipulate json-like dicts.
-    Transforms any json-like `dict` into an attribute-oriented class.
+    Transforms any json-like `dict` into a both key and
+    attribute-oriented class.
 
     Example: `foo['bar'][0]['key']` <-> `foo.bar[0].key`
 
     """
-    def __init__(self, instance: Union[dict, "Objectify"]):
-        if isinstance(instance, dict):
-            d = instance
-        elif isinstance(instance, Objectify):
-            d = instance.__dict__
-        else:
-            raise TypeError
+    def __init__(self, iterable: dict, **kwargs):
+        super().__init__(iterable, **kwargs)
 
-        for key, val in d.items():
+        for key, val in super().items():
             if isinstance(val, (list, tuple)):
-                setattr(
-                    self,
-                    key,
-                    [Objectify(x) if isinstance(x, (dict, Objectify)) else x for x in val]
-                    )
+                self[key] = [Objectify(x) if isinstance(x, dict) else x for x in val]
             elif isinstance(val, (dict, Objectify)):
-                setattr(self, key, Objectify(val))
+                self[key] = Objectify(val)
             else:
-                setattr(self, key, val)
+                self[key] = val
 
-        # Just for the fun
-        # [setattr(self, key, [Objectify(x) if isinstance(x, (dict, Objectify)) else x for x in val]) if isinstance(val, (list, tuple)) else setattr(self, key, Objectify(val)) if isinstance(val, (dict, Objectify)) else setattr(self, key, val) for key, val in d.items()]
-
-    def __repr__(self):
-        return str(dictify(self))
+    def __getattribute__(self, name):
+        if name in FORBIDDEN_KEYS:
+            return super().__getattribute__(name)
+        else:
+            return self[name]
 
 ############################################ FUNCTIONS ############################################
 
@@ -57,16 +57,11 @@ def is_objectify(instance: Any) -> bool:
 
     """
     if isinstance(instance, (list, tuple)):
-        return any([is_objectify(x) for x in instance])
-    elif isinstance(instance, dict):
-        return any([is_objectify(x) for x in instance.values()])
+        return any(isinstance(x, Objectify) for x in instance)
     else:
         return isinstance(instance, Objectify)
 
-    # Just for the fun
-    # return any([is_objectify(x) for x in instance]) if isinstance(instance, (list, tuple)) else any([is_objectify(x) for x in instance.values()]) if isinstance(instance, dict) else isinstance(instance, Objectify)
-
-def objectify(instance: Union[dict, list, tuple]) -> Union[List[Objectify], Objectify]:
+def objectify(iterable: Union[dict, list, tuple]) -> Union[List[Objectify], Objectify]:
     """Main operation: transposes any simple `dict` or `list` into an
     attribute-oriented object.
 
@@ -79,39 +74,9 @@ def objectify(instance: Union[dict, list, tuple]) -> Union[List[Objectify], Obje
             Result of transposition
 
     """
-    if isinstance(instance, dict):
-        return Objectify(instance)
-    elif isinstance(instance, (list, tuple)):
-        return [Objectify(x) for x in instance]
+    if isinstance(iterable, dict):
+        return Objectify(iterable)
+    elif isinstance(iterable, (list, tuple)):
+        return [Objectify(x) for x in iterable]
     else:
         raise TypeError('Object must be list, tuple or dict')
-
-def dictify(instance: Union[List[Objectify], Objectify, list, dict]) -> Union[list, dict]:
-    """Inverted operation: transposes any `Objectify`-composed object into a `dict`.
-
-    Parameters
-        instance: Union[List[`Objectify`], `Objectify`, `list`, `dict`]
-            The object to operate on
-
-    Returns
-        Union[`list`, `dict`]
-            Result of transposition
-
-    """
-    if isinstance(instance, (list, tuple)):
-        return [dictify(x) for x in instance]
-    elif isinstance(instance, dict):
-        return {key: dictify(val) for key, val in instance.items()}
-    elif not isinstance(instance, Objectify):
-        return instance
-    else:
-        d = dict()
-        for key, val in instance.__dict__.items():
-            if isinstance(val, list):
-                d[key] = [dictify(x) if isinstance(x, Objectify) else x for x in val]
-            else:
-                d[key] = dictify(val) if isinstance(val, Objectify) else val
-        return d
-
-    # Just for the fun
-    # return [dictify(x) for x in instance] if isinstance(instance, (list, tuple)) else {key: dictify(val) for key, val in instance.items()} if isinstance(instance, dict) else instance if not isinstance(instance, Objectify) else {k: [dictify(x) if isinstance(x, Objectify) else x for x in v] if isinstance(v, list) else dictify(v) if isinstance(v, Objectify) else v for k, v in instance.__dict__.items()}
