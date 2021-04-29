@@ -10,10 +10,12 @@ from typing import (
 
 ############################################# GLOBALS #############################################
 
-FORBIDDEN_KEYS = [                                          # list of impossible attributes for
-    "__base__", "__bases__", "__class__", "__dict__",       # `Objectify` class defined bellow
-    "__module__", "__weakref__", *(dict.__dict__.keys())    # else creates infinite loops since
-]                                                           # `dict.__getattribute__` is redefined
+# list of impossible attributes for `Objectify` class defined bellow else creates infinite
+# loops since `object.__getattribute__` and `object.__setattr__` are redefined there
+FORBIDDEN_KEYS = [
+    "__base__", "__bases__", "__class__", "__dict__", "__module__",
+    "__weakref__", "_instanceobject", *(dict.__dict__.keys())
+]
 
 ############################################# CLASSES #############################################
 
@@ -22,19 +24,17 @@ class Objectify(dict):
     Transforms any json-like `dict` into a both key and
     attribute-oriented class.
 
-    Example: `foo['bar'][0]['key']` <-> `foo.bar[0].key`
+    Example: `foo['bar'][0]['key']` <=> `foo.bar[0].key`
+
+    /!\ Parent (`dict`) attributes can't be provided,
+    they're either ignored or might break the class.
 
     """
-    def __init__(self, iterable: dict, **kwargs):
-        super().__init__(iterable, **kwargs)
+    def __init__(self, arg: Union[dict, Iterable], **kwargs):
+        super().__init__(arg, **kwargs)
 
-        for key, val in super().items():
-            if isinstance(val, (list, tuple)):
-                self[key] = [Objectify(x) if isinstance(x, dict) else x for x in val]
-            elif isinstance(val, (dict, Objectify)):
-                self[key] = Objectify(val)
-            else:
-                self[key] = val
+        for name, value in super().items():
+            self._instanceobject(name, value)
 
     def __getattribute__(self, name):
         if name in FORBIDDEN_KEYS:
@@ -42,28 +42,25 @@ class Objectify(dict):
         else:
             return self[name]
 
+    def __setattr__(self, name, value):
+        if name in FORBIDDEN_KEYS:
+            super().__setattr__(name, value)
+        else:
+            self._instanceobject(name, value)
+
+    def _instanceobject(self, name, value):
+        if isinstance(value, (list, tuple)):
+            self[name] = [Objectify(x) if isinstance(x, dict) else x for x in value]
+        elif isinstance(value, (dict, Objectify)):
+            self[name] = Objectify(value)
+        else:
+            self[name] = value
+
 ############################################ FUNCTIONS ############################################
 
-def is_objectify(instance: Any) -> bool:
-    """Verifies if the instance contains any `Objectify` component.
-
-    Parameters
-        instance: Any
-            The object to operate on
-
-    Returns
-        `bool`
-            `True` if any `Objectify` object in the tree else `False`
-
-    """
-    if isinstance(instance, (list, tuple)):
-        return any(isinstance(x, Objectify) for x in instance)
-    else:
-        return isinstance(instance, Objectify)
-
 def objectify(iterable: Union[dict, list, tuple]) -> Union[List[Objectify], Objectify]:
-    """Main operation: transposes any simple `dict` or `list` into an
-    attribute-oriented object.
+    """Main operation: transposes any simple `dict` or
+    `list`-like iterable into an `Objectify`-composed object.
 
     Parameters
         instance: Union[`dict`, `list`, `tuple`]
