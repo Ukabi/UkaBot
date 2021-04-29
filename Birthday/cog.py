@@ -14,8 +14,9 @@ from discord.ext.commands import (
     RoleConverter,
     TextChannelConverter
 )
-from discord.ext.commands import group
 from discord.ext.commands import BadArgument
+
+import discord.ext.commands as cmd
 
 ##################### UTILS #####################
 from asyncio import sleep
@@ -28,19 +29,19 @@ from typing import (
     List,
     Union
 )
-from utils import Config as Cfg
 from utils import (
-    Group,
-    ImprovedList
+    Config as Cfg,
+    Group
 )
 from utils import (
-    ask_confirmation,
-    can_give_role,
+    objectify,
     update_config
 )
 from utils.checks import (
     admin,
-    admin_or_permissions
+    admin_or_permissions,
+    ask_confirmation,
+    can_give_role
 )
 from utils.exceptions import InvalidArguments
 
@@ -180,7 +181,7 @@ class Birthday(Cog):
 
     ###################################### BIRTHDAY COMMANDS ######################################
 
-    @group(name='birthday')
+    @cmd.group(name='birthday')
     async def birthday_group(self, ctx: Context):
         pass
 
@@ -295,7 +296,7 @@ class Birthday(Cog):
         member = ctx.author
         member_config = self.config.member(member)
 
-        new = self.defaults_member.copy()
+        new = objectify(self.defaults_member.copy())
         new[self.NAME] = member.name
 
         member_config.set(new)
