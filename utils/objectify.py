@@ -74,6 +74,6 @@ def objectify(iterable: Union[dict, list, tuple]) -> Union[List[Objectify], Obje
     if isinstance(iterable, dict):
         return Objectify(iterable)
     elif isinstance(iterable, (list, tuple)):
-        return [Objectify(x) for x in iterable]
+        return [Objectify(x) if isinstance(x, dict) else x for x in iterable]
     else:
         raise TypeError('Object must be list, tuple or dict')
