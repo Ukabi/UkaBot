@@ -1,6 +1,7 @@
 ############################################# IMPORTS #############################################
 
 from typing import (
+    _GenericAlias,
     Any,
     Callable,
     Dict,
@@ -78,3 +79,41 @@ def flatten(l: Union[list, tuple]) -> list:
             temp += x if isinstance(x, (list, tuple)) else [x]
         l = temp
     return list(l)
+
+def isofclass(cls: Any, type_: _GenericAlias):
+    """An alternative of the `issubclass` function which
+    works with any `typing._GenericAlias` type.
+    Useful for more complex class checking.
+
+    """
+    if type(cls) == _GenericAlias:
+        if hasattr(type_, "__origin__") and cls.__origin__ == type_.__origin__:
+            if len(cls.__args__) != len(type_.__args__):
+                return False
+
+            for c_arg, t_arg in zip(cls.__args__, type_.__args__):
+                if not issubclass(c_arg, t_arg):
+                    return False
+
+            return True
+
+        return False
+    elif type(type_) == _GenericAlias:
+        return False
+    else:
+        return issubclass(cls, type_)
+
+def isoftype(instance: Any, type_: Any):
+    """An alternative of the `isinstance` function which
+    works with any `typing._GenericAlias` type.
+    Useful for more complex type checking.
+
+    """
+    if type(type_) == _GenericAlias:
+        if isinstance(instance, type_.__origin__):
+            if all(isinstance(x, type_.__args__) for x in instance):
+                return True
+
+        return False
+    else:
+        return isinstance(instance, type_)
