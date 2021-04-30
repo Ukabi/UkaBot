@@ -80,7 +80,7 @@ def flatten(l: Union[list, tuple]) -> list:
         l = temp
     return list(l)
 
-def isofclass(cls: Any, type_: _GenericAlias):
+def isofclass(cls: Union[type, _GenericAlias], type_: Union[type, _GenericAlias]) -> bool:
     """An alternative of the `issubclass` function which
     works with any `typing._GenericAlias` type.
     Useful for more complex class checking.
@@ -103,7 +103,7 @@ def isofclass(cls: Any, type_: _GenericAlias):
     else:
         return issubclass(cls, type_)
 
-def isoftype(instance: Any, type_: Any):
+def isoftype(instance: Any, type_: Union[type, _GenericAlias]) -> bool:
     """An alternative of the `isinstance` function which
     works with any `typing._GenericAlias` type.
     Useful for more complex type checking.
