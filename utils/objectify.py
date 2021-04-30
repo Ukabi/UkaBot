@@ -23,20 +23,20 @@ class Objectify:
 
     /!\ SUBCLASS MUST BE ANNOTATED WITH ATTRIBUTES AND
     THEIR TYPES, ELSE CONVERSION FROM Union[`dict`, `list`]
-    TO Union[`D`, List[`D`]] WILL NEVER WORK.
+    TO Union[`Objectify`, List[`Objectify`]] WILL NEVER WORK.
 
     Example annotation format:
-        class A(D):
+        class A(Objectify):
             b: B
             def __init__(self, b: B):
                 super().__init__(b=b)
 
-        class B(D):
+        class B(Objectify):
             c: List[C]
             def __init__(self, c: List[C]):
                 super().__init__(c=c)
 
-        class C(D):
+        class C(Objectify):
             d: int
             def __init__(self, d: int):
                 super().__init__(d=d)
