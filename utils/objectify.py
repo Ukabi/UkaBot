@@ -2,78 +2,168 @@
 
 from typing import (
     Any,
-    Dict,
     Iterable,
     List,
     Union
 )
-
-############################################# GLOBALS #############################################
-
-# list of impossible attributes for `Objectify` class defined bellow else creates infinite
-# loops since `object.__getattribute__` and `object.__setattr__` are redefined there
-FORBIDDEN_KEYS = [
-    "__base__", "__bases__", "__class__", "__dict__", "__module__",
-    "__weakref__", "_instanceobject", *(dict.__dict__.keys())
-]
+from .utils import (
+    isofclass,
+    isoftype
+)
 
 ############################################# CLASSES #############################################
 
-class Objectify(dict):
+class Objectify:
     """A more intuitive way to manipulate json-like dicts.
     Transforms any json-like `dict` into a both key and
     attribute-oriented class.
+    This class is meant to have children, in which constructor
+    takes class attributes as parameters, so that attribute
+    type is always defined and unique.
 
-    Example: `foo['bar'][0]['key']` <=> `foo.bar[0].key`
+    /!\ SUBCLASS MUST BE ANNOTATED WITH ATTRIBUTES AND
+    THEIR TYPES, ELSE CONVERSION FROM Union[`dict`, `list`]
+    TO Union[`D`, List[`D`]] WILL NEVER WORK.
 
-    /!\ Parent (`dict`) attributes can't be provided,
-    they're either ignored or might break the class.
+    Example annotation format:
+        class A(D):
+            b: B
+            def __init__(self, b: B):
+                super().__init__(b=b)
+
+        class B(D):
+            c: List[C]
+            def __init__(self, c: List[C]):
+                super().__init__(c=c)
+
+        class C(D):
+            d: int
+            def __init__(self, d: int):
+                super().__init__(d=d)
+
+    Considering the above configuration, both syntaxes are
+    equivalent: A['b'][0]['d'] <==> A.b[0].d
 
     """
-    def __init__(self, arg: Union[dict, Iterable], **kwargs):
-        super().__init__(arg, **kwargs)
+    __annotations__ = {}
 
-        for name, value in super().items():
-            self._instanceobject(name, value)
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-    def __getattribute__(self, name):
-        if name in FORBIDDEN_KEYS:
-            return super().__getattribute__(name)
+    def __contains__(self, key: str) -> bool:
+        """Returns key in self"""
+        return key in self.keys()
+
+    def __eq__(self, value: Any) -> bool:
+        """Returns self == value"""
+        return self._compile() == value
+
+    def __getitem__(self, key: str) -> Any:
+        """Returns self[key] (<==> self.key)"""
+        return getattr(self, key)
+
+    def __iter__(self) -> Iterable:
+        """Returns iter(self)"""
+        for key, value in self.items():
+            if isinstance(value, Objectify):
+                yield (key, dict(iter(value)))
+            else:
+                yield (key, value)
+
+    def __len__(self) -> int:
+        """Returns len(self)"""
+        return len(self.keys())
+
+    def __ne__(self, value: Any) -> bool:
+        """Returns self != value"""
+        return not self.__eq__(value)
+
+    def __repr__(self) -> str:
+        """Returns repr(self)"""
+        return repr(self._compile())
+
+    def __setitem__(self, key: str, value: Any):
+        """Affects value to self[key] (hence self.key)"""
+        if hasattr(self, key):
+            setattr(self, key, value)
         else:
-            return self[name]
+            raise AttributeError
 
-    def __setattr__(self, name, value):
-        if name in FORBIDDEN_KEYS:
-            super().__setattr__(name, value)
-        else:
-            self._instanceobject(name, value)
+    def _compile(self) -> dict:
+        """Compiles self in a dict structure"""
+        d = {}
+        for key, value in self.items():
+            if isinstance(value, Objectify):
+                d[key] = value._compile()
+            else:
+                d[key] = value
 
-    def _instanceobject(self, name, value):
-        if isinstance(value, (list, tuple)):
-            self[name] = [Objectify(x) if isinstance(x, dict) else x for x in value]
-        elif isinstance(value, (dict, Objectify)):
-            self[name] = Objectify(value)
-        else:
-            self[name] = value
+        return d
 
-############################################ FUNCTIONS ############################################
+    def copy(self) -> "Objectify":
+        """Same as dict.copy()"""
+        d = {}
+        for key, value in self.items():
+            if isinstance(value, Objectify):
+                d[key] = value.copy()
+            else:
+                d[key] = value
+        return self.__class__(**d)
 
-def objectify(iterable: Union[dict, list, tuple]) -> Union[List[Objectify], Objectify]:
-    """Main operation: transposes any simple `dict` or
-    `list`-like iterable into an `Objectify`-composed object.
+    def items(self) -> Iterable:
+        """Same as dict.items()"""
+        return self.__dict__.items()
+    
+    def keys(self) -> Iterable:
+        """Same as dict.keys()"""
+        return self.__dict__.keys()
+
+    def values(self) -> Iterable:
+        """Same as dict.values()"""
+        return self.__dict__.values()
+
+def objectify(
+    iterable: Union[list, dict], cls: Union[List[Objectify], Objectify, Any]
+) -> Union[List[Objectify], Objectify, Any]:
+    """Transforms any json-like `dict` into a both key and
+    attribute-oriented class.
 
     Parameters
-        instance: Union[`dict`, `list`, `tuple`]
-            The object to operate on
+        iterable: Union[`list`, `dict`]
+            The instance to convert
+        cls: Union[List[`Objectify`], `Objectify`, Any]
+            The type to convert instance to
 
     Returns
-        Union[List[`Objectify`], `Objectify`]
-            Result of transposition
+        Union[List[`Objectify`], `Objectify`, Any]
+            The converted instance to correct type
+    
+    Raises
+        AttributeError
+        TypeError
 
     """
-    if isinstance(iterable, dict):
-        return Objectify(iterable)
-    elif isinstance(iterable, (list, tuple)):
-        return [Objectify(x) if isinstance(x, dict) else x for x in iterable]
+    if isinstance(iterable, list) and isofclass(cls, List[Objectify]):
+        return [objectify(x, cls.__args__[0]) for x in iterable]
+
+    elif isinstance(iterable, dict) and isofclass(cls, Objectify):
+        args = {}
+        for arg, c in cls.__annotations__.items():
+            if isofclass(c, Objectify):
+                args[arg] = objectify(iterable[arg], c)
+            elif isofclass(c, List[Objectify]):
+                args[arg] = [objectify(x, c.__args__[0]) for x in iterable[arg]]
+            else:
+                args[arg] = iterable[arg]
+
+        return cls(**args)
+
+    elif isoftype(iterable, cls):
+        return iterable
+
     else:
-        raise TypeError('Object must be list, tuple or dict')
+        raise TypeError("Mismatch. Conversion pattern and data pattern don't seem alike.")
+
+    # Just for the fun of it
+    # return [objectify(x, cls.__args__[0]) for x in iterable] if isinstance(iterable, list) and isofclass(cls, List[Objectify]) else {arg: objectify(iterable[arg], c) if isofclass(c, Objectify) else [objectify(x, c.__args__[0]) for x in iterable[arg]] if isofclass(c, List[Objectify]) else iterable[arg] for arg, c in cls.__annotations__.items()} if isinstance(iterable, dict) and isofclass(cls, Objectify) else iterable
