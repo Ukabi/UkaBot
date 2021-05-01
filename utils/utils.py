@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Tuple,
     Union
 )
 
@@ -80,40 +81,70 @@ def flatten(l: Union[list, tuple]) -> list:
         l = temp
     return list(l)
 
-def isofclass(cls: Union[type, _GenericAlias], type_: Union[type, _GenericAlias]) -> bool:
+def isofclass(
+    cls: Union[type, _GenericAlias],
+    type_or_tuple: Union[type, _GenericAlias, Tuple[Union[type, _GenericAlias]]]
+) -> bool:
     """An alternative of the `issubclass` function which
     works with any `typing._GenericAlias` type.
     Useful for more complex class checking.
 
     """
-    if type(cls) == _GenericAlias:
-        if hasattr(type_, "__origin__") and cls.__origin__ == type_.__origin__:
-            if len(cls.__args__) != len(type_.__args__):
-                return False
-
-            for c_arg, t_arg in zip(cls.__args__, type_.__args__):
-                if not issubclass(c_arg, t_arg):
-                    return False
-
-            return True
-
-        return False
-    elif type(type_) == _GenericAlias:
-        return False
+    # converting type parameter to tuple if single value given
+    if isinstance(type_or_tuple, tuple):
+        types = type_or_tuple
     else:
-        return issubclass(cls, type_)
+        types = (type_or_tuple,)
 
-def isoftype(instance: Any, type_: Union[type, _GenericAlias]) -> bool:
+    # verifying if cls is a subclass of at least one of given classes
+    for type_ in types:
+        # typing class case
+        if type(cls) == _GenericAlias:
+            # cls and type_ have same base
+            if hasattr(type_, "__origin__") and cls.__origin__ == type_.__origin__:
+                # cls and type_ have same arguments length
+                if len(cls.__args__) == len(type_.__args__):
+                    for c_arg, t_arg in zip(cls.__args__, type_.__args__):
+                        # cls arguments are subclass of at least one type_ subclass, so True
+                        if isofclass(c_arg, t_arg):
+                            return True
+
+        # else cls is a common class, so if cls isn't typing class
+        elif type(type_) != _GenericAlias:
+            # and cls is subclass of type_, then True
+            if issubclass(cls, type_):
+                return True
+
+    # every other case if False
+    return False
+
+def isoftype(
+    instance: Any, type_or_tuple: Union[type, _GenericAlias, Tuple[Union[type, _GenericAlias]]]
+) -> bool:
     """An alternative of the `isinstance` function which
     works with any `typing._GenericAlias` type.
     Useful for more complex type checking.
 
     """
-    if type(type_) == _GenericAlias:
-        if isinstance(instance, type_.__origin__):
-            if all(isinstance(x, type_.__args__) for x in instance):
-                return True
-
-        return False
+    # converting type parameter to tuple if single value given
+    if isinstance(type_or_tuple, tuple):
+        types = type_or_tuple
     else:
-        return isinstance(instance, type_)
+        types = (type_or_tuple,)
+
+    # verifying if instance is an instance of at least one of given classes
+    for type_ in types:
+        # typing class case
+        if type(type_) == _GenericAlias:
+            # instance has same base
+            if isoftype(instance, type_.__origin__):
+                # all instance components have same type as type_ arguments, so True
+                if all(isoftype(x, type_.__args__) for x in instance):
+                    return True
+
+        # else type_ is a common class, so basic isinstance checking
+        elif isinstance(instance, type_):
+            return True
+
+    # every other case if False
+    return False

@@ -4,6 +4,7 @@ from typing import (
     Any,
     Iterable,
     List,
+    Tuple,
     Union
 )
 from .utils import (
@@ -68,6 +69,8 @@ class Objectify:
         for key, value in self.items():
             if isinstance(value, Objectify):
                 yield (key, dict(iter(value)))
+            elif isinstance(value, (list, tuple)):
+                yield (key, [dict(iter(x)) if isinstance(x, Objectify) else x for x in value])
             else:
                 yield (key, value)
 
@@ -96,6 +99,8 @@ class Objectify:
         for key, value in self.items():
             if isinstance(value, Objectify):
                 d[key] = value._compile()
+            elif isoftype(value, (List[Objectify], Tuple[Objectify])):
+                d[key] = [x._compile() for x in value]
             else:
                 d[key] = value
 
@@ -123,14 +128,28 @@ class Objectify:
         """Same as dict.values()"""
         return self.__dict__.values()
 
+def dictify(iterable: Union[List[Objectify], Objectify, Any]) -> Union[list, dict]:
+    """Inverted operation: transforms any `Objectify`-composed
+    data into an Union[`list`, `dict`]
+
+    """
+    if isoftype(iterable, (List[Objectify], Tuple[Objectify])):
+        return [x._compile() for x in iterable]
+    elif isinstance(iterable, (list, tuple)):
+        return [dictify(x) for x in iterable]
+    elif isinstance(iterable, Objectify):
+        return iterable._compile()
+    else:
+        return dict(iterable)
+
 def objectify(
-    iterable: Union[list, dict], cls: Union[List[Objectify], Objectify, Any]
+    iterable: Union[list, tuple, dict], cls: Union[List[Objectify], Objectify, Any]
 ) -> Union[List[Objectify], Objectify, Any]:
     """Transforms any json-like `dict` into a both key and
     attribute-oriented class.
 
     Parameters
-        iterable: Union[`list`, `dict`]
+        iterable: Union[`list`, `tuple`, `dict`]
             The instance to convert
         cls: Union[List[`Objectify`], `Objectify`, Any]
             The type to convert instance to
@@ -138,21 +157,22 @@ def objectify(
     Returns
         Union[List[`Objectify`], `Objectify`, Any]
             The converted instance to correct type
-    
+
     Raises
         AttributeError
         TypeError
 
     """
-    if isinstance(iterable, list) and isofclass(cls, List[Objectify]):
+    if isinstance(iterable, (list, tuple))\
+       and (isofclass(cls, (List[Objectify], Tuple[Objectify]))):
         return [objectify(x, cls.__args__[0]) for x in iterable]
 
-    elif isinstance(iterable, dict) and isofclass(cls, Objectify):
+    elif isinstance(iterable, (Objectify, dict)) and isofclass(cls, Objectify):
         args = {}
         for arg, c in cls.__annotations__.items():
             if isofclass(c, Objectify):
                 args[arg] = objectify(iterable[arg], c)
-            elif isofclass(c, List[Objectify]):
+            elif isofclass(c, (List[Objectify], Tuple[Objectify])):
                 args[arg] = [objectify(x, c.__args__[0]) for x in iterable[arg]]
             else:
                 args[arg] = iterable[arg]
@@ -164,6 +184,3 @@ def objectify(
 
     else:
         raise TypeError("Mismatch. Conversion pattern and data pattern don't seem alike.")
-
-    # Just for the fun of it
-    # return [objectify(x, cls.__args__[0]) for x in iterable] if isinstance(iterable, list) and isofclass(cls, List[Objectify]) else {arg: objectify(iterable[arg], c) if isofclass(c, Objectify) else [objectify(x, c.__args__[0]) for x in iterable[arg]] if isofclass(c, List[Objectify]) else iterable[arg] for arg, c in cls.__annotations__.items()} if isinstance(iterable, dict) and isofclass(cls, Objectify) else iterable
