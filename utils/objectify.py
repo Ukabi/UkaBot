@@ -15,13 +15,6 @@ from .utils import (
     isoftype
 )
 
-############################################# GLOBALS #############################################
-
-JSON_like_nottransposed = Union[list, dict]
-JSON_like_transposed = Union[List[Objectify], Objectify, list]
-
-JSON_like_any = Union[JSON_like_nottransposed, JSON_like_transposed]
-
 ############################################# CLASSES #############################################
 
 class Objectify:
@@ -137,6 +130,13 @@ class Objectify:
     def values(self) -> Iterable:
         """Same as dict.values()"""
         return self.__dict__.values()
+
+############################################# GLOBALS #############################################
+
+JSON_like_nottransposed = Union[list, dict]
+JSON_like_transposed = Union[List[Objectify], Objectify, list]
+
+JSON_like_any = Union[JSON_like_nottransposed, JSON_like_transposed]
 
 ############################################ FUNCTIONS ############################################
 
