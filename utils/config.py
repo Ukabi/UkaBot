@@ -16,9 +16,15 @@ from typing import (
     Any,
     Dict,
     List,
+    Type,
     Union
 )
 
+from .objectify import (
+    JSON_like_any,
+    JSON_like_nottransposed,
+    JSON_like_transposed
+)
 from .objectify import Objectify
 from .objectify import (
     dictify,
@@ -38,8 +44,7 @@ class Group:
 
     """
     def __init__(
-        self, file: str, data_type: Union[List[Objectify], Objectify, list],
-        defaults: Union[list, Dict[str, Any], List[Objectify], Objectify] = {},
+        self, file: str, data_type: JSON_like_transposed, defaults: JSON_like_nottransposed = {},
     ):
         self.file = file
         self._data = load(
@@ -52,7 +57,7 @@ class Group:
         """Returns repr(self)"""
         return repr(self._data)
 
-    def get(self) -> Union[List[Objectify], Objectify]:
+    def get(self) -> JSON_like_transposed:
         """Returns the config file data.
 
         Returns
@@ -62,7 +67,7 @@ class Group:
         """
         return self._data
 
-    def set(self, data: Union[List[Objectify], Objectify]):
+    def set(self, data: JSON_like_transposed):
         """Overwrite previous data to new given value.
 
         Parameters
@@ -114,24 +119,12 @@ class Config:
 
     def __init__(
         self, cog: Cog, *,
-
-        globals: Union[list, dict, List[Objectify], Objectify] = {},
-        globals_type: Union[List[Objectify], Objectify, list] = Objectify,
-
-        channel: Union[list, dict, List[Objectify], Objectify] = {},
-        channel_type: Union[List[Objectify], Objectify, list] = Objectify,
-
-        guild: Union[list, dict, List[Objectify], Objectify] = {},
-        guild_type: Union[List[Objectify], Objectify, list] = Objectify,
-
-        member: Union[list, dict, List[Objectify], Objectify] = {},
-        member_type: Union[List[Objectify], Objectify, list] = Objectify,
-
-        role: Union[list, dict, List[Objectify], Objectify] = {},
-        role_type: Union[List[Objectify], Objectify, list] = Objectify,
-
-        user: Union[list, dict, List[Objectify], Objectify] = {},
-        user_type: Union[List[Objectify], Objectify, list] = Objectify,
+        globals: JSON_like_any = {}, globals_type: Type[JSON_like_transposed] = Objectify,
+        channel: JSON_like_any = {}, channel_type: Type[JSON_like_transposed] = Objectify,
+        guild:   JSON_like_any = {}, guild_type:   Type[JSON_like_transposed] = Objectify,
+        member:  JSON_like_any = {}, member_type:  Type[JSON_like_transposed] = Objectify,
+        role:    JSON_like_any = {}, role_type:    Type[JSON_like_transposed] = Objectify,
+        user:    JSON_like_any = {}, user_type:    Type[JSON_like_transposed] = Objectify,
     ):
         self.cog = cog.__class__.__name__
 
@@ -188,8 +181,8 @@ class Config:
             write(f"{path_to_folder}/{file}", defaults)
 
     def _get_file(
-        self, *primary_keys: str, defaults: Union[List[Objectify], Objectify, list] = Objectify(),
-        data_type: Union[List[Objectify], Objectify, list] = Objectify
+        self, *primary_keys: str, defaults: JSON_like_transposed = Objectify(),
+        data_type: Type[JSON_like_transposed] = Objectify
     ) -> Group:
         """Returns the wanted configuration file according to given arguments,
         as a `Group` instance.
@@ -236,10 +229,7 @@ class Config:
 
         return path_to_folder, files
 
-    def defaults_globals(
-        self, defaults: Union[list, Dict[str, Any], List[Objectify], Objectify],
-        data_type: Union[List[Objectify], Objectify, list]
-    ):
+    def defaults_globals(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
         """Sets default value for global configuration files.
 
         Parameters
@@ -250,10 +240,7 @@ class Config:
         self._defaults_globals = objectify(defaults, data_type)
         self._type_globals = data_type
 
-    def defaults_channel(
-        self, defaults: Union[list, Dict[str, Any], List[Objectify], Objectify],
-        data_type: Union[List[Objectify], Objectify, list]
-    ):
+    def defaults_channel(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
         """Sets default value for `GuildChannel` configuration files.
 
         Parameters
@@ -264,10 +251,7 @@ class Config:
         self._defaults_channel = objectify(defaults, data_type)
         self._type_channel = data_type
 
-    def defaults_guild(
-        self, defaults: Union[list, Dict[str, Any], List[Objectify], Objectify],
-        data_type: Union[List[Objectify], Objectify, list]
-    ):
+    def defaults_guild(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
         """Sets default value for `Guild` configuration files.
 
         Parameters
@@ -278,10 +262,7 @@ class Config:
         self._defaults_guild = objectify(defaults, data_type)
         self._type_guild = data_type
 
-    def defaults_member(
-        self, defaults: Union[list, Dict[str, Any], List[Objectify], Objectify],
-        data_type: Union[List[Objectify], Objectify, list]
-    ):
+    def defaults_member(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
         """Sets default value for `Member` configuration files.
 
         Parameters
@@ -292,10 +273,7 @@ class Config:
         self._defaults_member = objectify(defaults, data_type)
         self._type_member = data_type
 
-    def defaults_role(
-        self, defaults: Union[list, Dict[str, Any], List[Objectify], Objectify],
-        data_type: Union[List[Objectify], Objectify, list]
-    ):
+    def defaults_role(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
         """Sets default value for `Role` configuration files.
 
         Parameters
@@ -306,10 +284,7 @@ class Config:
         self._defaults_role = objectify(defaults, data_type)
         self._type_role = data_type
 
-    def defaults_user(
-        self, defaults: Union[list, Dict[str, Any], List[Objectify], Objectify],
-        data_type: Union[List[Objectify], Objectify, list]
-    ):
+    def defaults_user(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
         """Sets default value for `User` configuration files.
 
         Parameters
@@ -533,7 +508,7 @@ class Config:
         )
 
     def get_all(
-        self, *scopes: str, data_type: Union[List[Objectify], Objectify, list] = None
+        self, *scopes: str, data_type: Type[JSON_like_transposed] = None
     ) -> Dict[str, Group]:
         """Returns a dict composed of files names from requested directory
         as keys and `Group` corresponding to file as values.
@@ -716,9 +691,8 @@ def safe_open(path: str, mode: str) -> open:
     return open(path, mode=mode)
 
 def load(
-    path: str, if_error: Union[list, dict] = [],
-    to_object: Union[List[Objectify], Objectify, type] = None
-) -> Union[List[Objectify], Objectify, dict, list]:
+    path: str, if_error: Union[list, dict] = [], to_object: Type[JSON_like_transposed] = None
+) -> JSON_like_any:
     """Loads data from file path, as a json data file.
 
     Parameters
@@ -744,7 +718,7 @@ def load(
 
     return objectify(data, to_object) if to_object else data
 
-def write(path: str, data: Union[List[Objectify], Objectify, dict, list]):
+def write(path: str, data: JSON_like_any):
     """Writes data to path, as a json data file.
 
     Parameters

@@ -2,9 +2,11 @@
 
 from typing import (
     Any,
+    Dict,
     Iterable,
     List,
     Tuple,
+    Type,
     Union
 )
 
@@ -12,6 +14,13 @@ from .utils import (
     isofclass,
     isoftype
 )
+
+############################################# GLOBALS #############################################
+
+JSON_like_nottransposed = Union[list, dict]
+JSON_like_transposed = Union[List[Objectify], Objectify, list]
+
+JSON_like_any = Union[JSON_like_nottransposed, JSON_like_transposed]
 
 ############################################# CLASSES #############################################
 
@@ -129,34 +138,36 @@ class Objectify:
         """Same as dict.values()"""
         return self.__dict__.values()
 
-def dictify(iterable: Union[List[Objectify], Objectify, Any]) -> Union[list, dict]:
+############################################ FUNCTIONS ############################################
+
+def dictify(iterable: JSON_like_transposed) -> JSON_like_nottransposed:
     """Inverted operation: transforms any `Objectify`-composed
     data into an Union[`list`, `dict`]
 
     """
-    if isoftype(iterable, (List[Objectify], Tuple[Objectify])):
-        return [x._compile() for x in iterable]
-    elif isinstance(iterable, (list, tuple)):
-        return [dictify(x) for x in iterable]
-    elif isinstance(iterable, Objectify):
+    if isinstance(iterable, Objectify):
         return iterable._compile()
+    elif isoftype(iterable, List[Objectify]):
+        return [x._compile() for x in iterable]
+    elif isinstance(iterable, list):
+        return [dictify(x) for x in iterable]
     else:
         return dict(iterable)
 
 def objectify(
-    iterable: Union[list, tuple, dict], cls: Union[List[Objectify], Objectify, Any]
-) -> Union[List[Objectify], Objectify, Any]:
+    iterable: JSON_like_transposed, cls: Type[JSON_like_transposed]
+) -> JSON_like_transposed:
     """Transforms any json-like `dict` into a both key and
     attribute-oriented class.
 
     Parameters
         iterable: Union[`list`, `tuple`, `dict`]
             The instance to convert
-        cls: Union[List[`Objectify`], `Objectify`, Any]
+        cls: Union[List[`Objectify`], `Objectify`, list]
             The type to convert instance to
 
     Returns
-        Union[List[`Objectify`], `Objectify`, Any]
+        Union[List[`Objectify`], `Objectify`, list]
             The converted instance to correct type
 
     Raises
@@ -165,7 +176,7 @@ def objectify(
 
     """
     if isinstance(iterable, (list, tuple))\
-       and (isofclass(cls, (List[Objectify], Tuple[Objectify]))):
+       and isofclass(cls, (List[Objectify], Tuple[Objectify])):
         return [objectify(x, cls.__args__[0]) for x in iterable]
 
     elif isinstance(iterable, (Objectify, dict)) and isofclass(cls, Objectify):

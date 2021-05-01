@@ -7,8 +7,13 @@ from typing import (
     Dict,
     List,
     Tuple,
+    Type,
     Union
 )
+
+############################################# GLOBALS #############################################
+
+ExtendedType = Union[type, _GenericAlias]
 
 ############################################# CLASSES #############################################
 
@@ -56,8 +61,7 @@ def flatten(l: Union[list, tuple]) -> list:
     return list(l)
 
 def isofclass(
-    cls: Union[type, _GenericAlias],
-    type_or_tuple: Union[type, _GenericAlias, Tuple[Union[type, _GenericAlias]]]
+    cls: ExtendedType, type_or_tuple: Type[Union[ExtendedType, Tuple[ExtendedType]]]
 ) -> bool:
     """An alternative of the `issubclass` function which
     works with any `typing._GenericAlias` type.
@@ -92,9 +96,7 @@ def isofclass(
     # every other case if False
     return False
 
-def isoftype(
-    instance: Any, type_or_tuple: Union[type, _GenericAlias, Tuple[Union[type, _GenericAlias]]]
-) -> bool:
+def isoftype(instance: Any, type_or_tuple: Type[Union[ExtendedType, Tuple[ExtendedType]]]) -> bool:
     """An alternative of the `isinstance` function which
     works with any `typing._GenericAlias` type.
     Useful for more complex type checking.
