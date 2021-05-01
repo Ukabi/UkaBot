@@ -7,6 +7,7 @@ from typing import (
     Tuple,
     Union
 )
+
 from .utils import (
     isofclass,
     isoftype
