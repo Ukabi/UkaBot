@@ -17,6 +17,13 @@ from discord.ext.commands import (
 from discord.ext.commands import group
 from discord.ext.commands import BadArgument
 
+##################### DATA ######################
+from .data import (
+    Date,
+    Guild as GuildData,
+    Member as MemberData
+)
+
 ##################### UTILS #####################
 from asyncio import sleep
 from datetime import (
@@ -38,7 +45,6 @@ from utils.checks import (
     can_give_role
 )
 from utils.exceptions import InvalidArguments
-from utils.objectify import Objectify
 
 import numpy as np
 import time
@@ -51,29 +57,6 @@ MONTHS = [
     "Sep", "Oct", "Nov", "Dec"
 ]
 
-########################################## DATA CLASSES ###########################################
-
-class _Guild(Objectify):
-    channel: int
-    role: int
-
-    def __init__(self, channel: int, role: int):
-        super().__init__(channel=channel, role=role)
-
-class _Date(Objectify):
-    day: int
-    month: int
-
-    def __init__(self, day: int, month: int):
-        super().__init__(day=day, month=month)
-
-class _Member(Objectify):
-    birthday: _Date
-    name: str
-
-    def __init__(self, birthday: _Date, name: str):
-        super().__init__(birthday=birthday, name=name)
-
 ############################################### COGS ##############################################
 
 class Birthday(Cog):
@@ -85,11 +68,11 @@ class Birthday(Cog):
 
         self.config = Cfg(self)
 
-        self.defaults_guild = _Guild(channel=0, role=0)
+        self.defaults_guild = GuildData(channel=0, role=0)
         self.config.defaults_guild(self.defaults_guild)
 
-        self.defaults_member = _Member(
-            birthday=_Date(day=None, month=None),
+        self.defaults_member = MemberData(
+            birthday=Date(day=None, month=None),
             name="Unknown"
         )
         self.config.defaults_member(self.defaults_member)
@@ -149,8 +132,8 @@ class Birthday(Cog):
         self.update_names(members_configs)
 
         # matching current date with birthdays
-        today = _Date(day=dt.now().day, month=dt.now().month)
-        # Dict[Member, _Date]
+        today = Date(day=dt.now().day, month=dt.now().month)
+        # Dict[Member, Date]
         m_birthdays = {m: g.get().birthday for m, g in members_configs.items()}
         # List[Member]
         to_treat = [m for m, b in m_birthdays.items() if today == b]
@@ -283,8 +266,8 @@ class Birthday(Cog):
             member = ctx.author
             member_config = self.config.member(member)
 
-            member_data = _Member(
-                birthday=_Date(
+            member_data = MemberData(
+                birthday=Date(
                     day=date.tm_mday,
                     month=date.tm_mon
                 ),
@@ -325,7 +308,7 @@ class Birthday(Cog):
         # Dict[int, _Member]
         members_data = {i: g.get() for i, g in members_configs.items()}
 
-        # Dict[str, _Date]
+        # Dict[str, Date]
         members_birthdays = dict()
         for member_id, member_data in members_data.items():
             member = guild.get_member(member_id)
@@ -339,13 +322,13 @@ class Birthday(Cog):
         if members_birthdays:
             # preparing data for sorting
 
-            # List[Member], List[_Date]
+            # List[Member], List[Date]
             members, birthdays = [l for l in zip(*(members_birthdays.items()))]
             # List[int], List[int]
             days, months = [l for l in zip(*[(b.day, b.month) for b in birthdays])]
             # List[int]
             order = np.lexsort((members, days, months))
-            # List[Tuple[Member and _Date]]
+            # List[Tuple[Member and Date]]
             sorted_birthdays = [(members[i], birthdays[i]) for i in order]
 
             message = ""
