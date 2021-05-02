@@ -5,8 +5,7 @@ from discord import (
     Embed,
     Emoji,
     File,
-    Role,
-    TextChannel
+    Role
 )
 from discord.ext.commands import (
     BadArgument,
@@ -18,25 +17,23 @@ from discord.ext.commands import (
 )
 from discord.ext.commands import group
 
-##################### UTILS #####################
-import io
-import requests as rq
+##################### DATA ######################
+from .data import PATH
 
-from pathlib import Path
-from typing import (
-    List,
-    Union
-)
-from utils import (
+##################### UTILS #####################
+from typing import Union
+from utils.checks import (
     admin_or_permissions,
     ask_confirmation
 )
 from utils.exceptions import InvalidArguments
 
+import io
+import requests as rq
+
 ############################################### COGS ##############################################
 
 class EmojiManager(Cog):
-    PATH = f'{Path(__file__).absolute()}/emojis'
 
     ######################################### CONSTRUCTOR #########################################
 
@@ -46,13 +43,13 @@ class EmojiManager(Cog):
     #################################### EMOJI MANAGER COMMANDS ###################################
 
     @admin_or_permissions(manage_emojis=True)
-    @group(name='emoji')
-    async def emoji_group(self, ctx: Context):
+    @group()
+    async def emoji(self, ctx: Context):
         pass
 
     @admin_or_permissions(manage_emojis=True)
-    @emoji_group.command(name='add')
-    async def emoji_add(
+    @emoji.command()
+    async def add(
         self, ctx: Context, file_path: str, name: str,
         *roles: Union[int, str, Role]
     ):
@@ -87,7 +84,7 @@ class EmojiManager(Cog):
 
         else:
             try:
-                with open(f'{self.PATH}/{file_path}', 'rb') as image:
+                with open(f'{PATH}/{file_path}', 'rb') as image:
                     raw_data = image.read()
                     byte_data = bytearray((raw_data))
                     file = io.BytesIO(bytes(byte_data))
@@ -128,9 +125,8 @@ class EmojiManager(Cog):
         await ctx.send(embed=embed)
 
     @admin_or_permissions(manage_emojis=True)
-    @emoji_group.command(name='remove')
-    async def emoji_remove(self, ctx: Context, emoji: Union[str, int, Emoji]):
-        """**[emoji]** : removes emoji from server."""
+    @emoji.command()
+    async def remove(self, ctx: Context, emoji: Union[str, int, Emoji]):
         try:
             emoji = await EmojiConverter().convert(ctx, emoji)
             emoji_parse = str(emoji) if emoji.available else emoji.name
@@ -165,9 +161,8 @@ class EmojiManager(Cog):
         await ctx.send(embed= embed)
 
     @admin_or_permissions(manage_emojis=True)
-    @emoji_group.command(name='list')
-    async def emoji_list(self, ctx: Context):
-        """: shows the server's emoji list."""
+    @emoji.command(name='list')
+    async def list_(self, ctx: Context):
         emojis = sorted(ctx.guild.emojis, key=lambda e: e.name)
 
         if not emojis:
