@@ -23,6 +23,7 @@ from .data import (
     Guild as GuildData,
     Member as MemberData
 )
+from .data import MONTHS
 
 ##################### UTILS #####################
 from asyncio import sleep
@@ -48,14 +49,6 @@ from utils.exceptions import InvalidArguments
 
 import numpy as np
 import time
-
-############################################# GLOBALS #############################################
-
-MONTHS = [
-    "Jan", "Feb", "Mar", "Apr",
-    "May", "Jun", "Jul", "Aug",
-    "Sep", "Oct", "Nov", "Dec"
-]
 
 ############################################### COGS ##############################################
 
