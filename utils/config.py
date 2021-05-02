@@ -20,15 +20,14 @@ from typing import (
     Union
 )
 
-from .objectify import (
-    JSON_like_any,
-    JSON_like_nottransposed,
-    JSON_like_transposed
-)
 from .objectify import Objectify
 from .objectify import (
     dictify,
     objectify
+)
+from .objectify import (
+    JSON_like_any,
+    JSON_like_transposed as JSON_like
 )
 
 ############################################# CLASSES #############################################
@@ -44,12 +43,12 @@ class Group:
 
     """
     def __init__(
-        self, file: str, data_type: JSON_like_transposed, defaults: JSON_like_nottransposed = {},
+        self, file: str, defaults: JSON_like = Objectify(),
     ):
         self.file = file
         self._data = load(
             file,
-            to_object=data_type,
+            to_object=type(defaults),
             if_error=defaults
         )
 
@@ -57,7 +56,7 @@ class Group:
         """Returns repr(self)"""
         return repr(self._data)
 
-    def get(self) -> JSON_like_transposed:
+    def get(self) -> JSON_like:
         """Returns the config file data.
 
         Returns
@@ -67,7 +66,7 @@ class Group:
         """
         return self._data
 
-    def set(self, data: JSON_like_transposed):
+    def set(self, data: JSON_like):
         """Overwrite previous data to new given value.
 
         Parameters
@@ -99,7 +98,6 @@ class Config:
             configuation file to `{'foo': []}`
 
     """
-    # for defaults data
     GLOBALS = "globals"
     CHANNEL = "channel"
     GUILD = "guild"
@@ -107,66 +105,24 @@ class Config:
     ROLE = "role"
     USER = "user"
 
-    # for defaults data type
-    GLOBALS_TYPE = "globals_type"
-    CHANNEL_TYPE = "channel_type"
-    GUILD_TYPE = "guild_type"
-    MEMBER_TYPE = "member_type"
-    ROLE_TYPE = "role_type"
-    USER_TYPE = "user_type"
-
     EXTENSION = ".json"
 
     def __init__(
         self, cog: Cog, *,
-        globals: JSON_like_any = {}, globals_type: Type[JSON_like_transposed] = Objectify,
-        channel: JSON_like_any = {}, channel_type: Type[JSON_like_transposed] = Objectify,
-        guild:   JSON_like_any = {}, guild_type:   Type[JSON_like_transposed] = Objectify,
-        member:  JSON_like_any = {}, member_type:  Type[JSON_like_transposed] = Objectify,
-        role:    JSON_like_any = {}, role_type:    Type[JSON_like_transposed] = Objectify,
-        user:    JSON_like_any = {}, user_type:    Type[JSON_like_transposed] = Objectify,
+        globals: JSON_like = Objectify(), channel: JSON_like = Objectify(),
+        guild:   JSON_like = Objectify(), member:  JSON_like = Objectify(),
+        role:    JSON_like = Objectify(), user:    JSON_like = Objectify()
     ):
         self.cog = cog.__class__.__name__
 
-        if globals and globals_type:
-            self.defaults_globals(globals, globals_type)
-        else:
-            self._defaults_globals = {}
-            self._type_globals = Objectify
+        self.defaults_globals(globals)
+        self.defaults_channel(channel)
+        self.defaults_guild(guild)
+        self.defaults_member(member)
+        self.defaults_role(role)
+        self.defaults_user(user)
 
-        if channel and channel_type:
-            self.defaults_channel(channel, channel_type)
-        else:
-            self._defaults_channel = {}
-            self._type_channel = Objectify
-
-        if guild and guild_type:
-            self.defaults_guild(guild, guild_type)
-        else:
-            self._defaults_guild = {}
-            self._type_guild = Objectify
-
-        if member and member_type:
-            self.defaults_member(member, member_type)
-        else:
-            self._defaults_member = {}
-            self._type_member = Objectify
-
-        if role and role_type:
-            self.defaults_role(role, role_type)
-        else:
-            self._defaults_role = {}
-            self._type_role = Objectify
-
-        if user and user_type:
-            self.defaults_user(user, user_type)
-        else:
-            self._defaults_user = {}
-            self._type_user = Objectify
-
-    def _clear_folder(
-        self, *scopes: str, defaults: Union[List[Objectify], Objectify, list] = Objectify()
-    ):
+    def _clear_folder(self, *scopes: str, defaults: JSON_like = Objectify()):
         """Sets to default every `Group` in requested path.
 
         Parameters
@@ -180,15 +136,35 @@ class Config:
         for file in files:
             write(f"{path_to_folder}/{file}", defaults)
 
-    def _get_file(
-        self, *primary_keys: str, defaults: JSON_like_transposed = Objectify(),
-        data_type: Type[JSON_like_transposed] = Objectify
-    ) -> Group:
+    def _get_all(self, *scopes: str, defaults: JSON_like = Objectify()) -> Dict[str, Group]:
+        """Returns a dict composed of files names from requested directory
+        as keys and `Group` corresponding to file as values.
+
+        Parameters
+            *scopes: `str`
+                The path elements leading to directory
+
+        Returns
+            Dict[`str`, `Group`]
+
+        """
+        if not defaults:
+            data_type = self._defaults_globals
+
+        path_to_folder, files = self._get_folder(*scopes)
+
+        paths = [f"{path_to_folder}/{file}" for file in files]
+        groups = [Group(path, defaults=defaults) for path in paths]
+
+        files_without_extension = [file[:-len(self.EXTENSION)] for file in files]
+        return {f: g for f, g in zip(files_without_extension, groups)}
+
+    def _get_file(self, *primary_keys: str, defaults: JSON_like = Objectify()) -> Group:
         """Returns the wanted configuration file according to given arguments,
         as a `Group` instance.
 
         Parameters
-            *primary keys: List[`str`]
+            *primary_keys: `str`
                 The keys leading to configuration file
                 Example: `self._get_file('foo', 'bar')` -> `'{self.cog}/foo/bar.json'`
 
@@ -201,7 +177,7 @@ class Config:
         path += "/".join(primary_keys) if primary_keys else self.GLOBALS
         path += self.EXTENSION
 
-        return Group(path, data_type=data_type, defaults=defaults)
+        return Group(path, defaults=defaults)
 
     def _get_folder(self, *scopes: str) -> str and List[str]:
         """Returns path to folder and folder files names.
@@ -229,7 +205,7 @@ class Config:
 
         return path_to_folder, files
 
-    def defaults_globals(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
+    def defaults_globals(self, defaults: JSON_like):
         """Sets default value for global configuration files.
 
         Parameters
@@ -237,10 +213,9 @@ class Config:
                 The default value to parse
 
         """
-        self._defaults_globals = objectify(defaults, data_type)
-        self._type_globals = data_type
+        self._defaults_globals = defaults
 
-    def defaults_channel(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
+    def defaults_channel(self, defaults: JSON_like):
         """Sets default value for `GuildChannel` configuration files.
 
         Parameters
@@ -248,10 +223,9 @@ class Config:
                 The default value to parse
 
         """
-        self._defaults_channel = objectify(defaults, data_type)
-        self._type_channel = data_type
+        self._defaults_channel = defaults
 
-    def defaults_guild(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
+    def defaults_guild(self, defaults: JSON_like):
         """Sets default value for `Guild` configuration files.
 
         Parameters
@@ -259,10 +233,9 @@ class Config:
                 The default value to parse
 
         """
-        self._defaults_guild = objectify(defaults, data_type)
-        self._type_guild = data_type
+        self._defaults_guild = defaults
 
-    def defaults_member(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
+    def defaults_member(self, defaults: JSON_like):
         """Sets default value for `Member` configuration files.
 
         Parameters
@@ -270,10 +243,9 @@ class Config:
                 The default value to parse
 
         """
-        self._defaults_member = objectify(defaults, data_type)
-        self._type_member = data_type
+        self._defaults_member = defaults
 
-    def defaults_role(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
+    def defaults_role(self, defaults: JSON_like):
         """Sets default value for `Role` configuration files.
 
         Parameters
@@ -281,10 +253,9 @@ class Config:
                 The default value to parse
 
         """
-        self._defaults_role = objectify(defaults, data_type)
-        self._type_role = data_type
+        self._defaults_role = defaults
 
-    def defaults_user(self, defaults: JSON_like_any, data_type: Type[JSON_like_transposed]):
+    def defaults_user(self, defaults: JSON_like):
         """Sets default value for `User` configuration files.
 
         Parameters
@@ -292,14 +263,10 @@ class Config:
                 The default value to parse
 
         """
-        self._defaults_user = objectify(defaults, data_type)
-        self._type_user = data_type
+        self._defaults_user = defaults
 
     def globals(self) -> Group:
-        return self._get_file(
-            data_type=self._type_globals,
-            defaults=self._defaults_globals
-        )
+        return self._get_file(defaults=self._defaults_globals)
 
     def channel(self, channel: GuildChannel) -> Group:
         """Returns the given `GuildChannel` `Group` for `self.cog`.
@@ -317,7 +284,6 @@ class Config:
             self.CHANNEL,
             str(channel.id),
 
-            data_type=self._type_channel,
             defaults=self._defaults_channel
         )
 
@@ -337,7 +303,6 @@ class Config:
             self.CHANNEL,
             str(channel_id),
 
-            data_type=self._type_channel,
             defaults=self._defaults_channel
         )
 
@@ -357,7 +322,6 @@ class Config:
             self.GUILD,
             str(guild.id),
 
-            data_type=self._type_guild,
             defaults=self._defaults_guild
         )
 
@@ -377,7 +341,6 @@ class Config:
             self.GUILD,
             str(guild_id),
 
-            data_type=self._type_guild,
             defaults=self._defaults_guild
         )
 
@@ -398,7 +361,6 @@ class Config:
             str(member.guild.id),
             str(member.id),
 
-            data_type=self._type_member,
             defaults=self._defaults_member
         )
 
@@ -423,7 +385,6 @@ class Config:
             str(guild_id),
             str(member_id),
 
-            data_type=self._type_member,
             defaults=self._defaults_member
         )
 
@@ -443,7 +404,6 @@ class Config:
             self.ROLE,
             str(role.id),
 
-            data_type=self._type_role,
             defaults=self._defaults_role
         )
 
@@ -463,7 +423,6 @@ class Config:
             self.ROLE,
             str(role_id),
 
-            data_type=self._type_role,
             defaults=self._defaults_role
         )
 
@@ -483,7 +442,6 @@ class Config:
             self.USER,
             str(user.id),
 
-            data_type=self._type_user,
             defaults=self._defaults_user
         )
 
@@ -503,36 +461,10 @@ class Config:
             self.USER,
             str(user_id),
 
-            data_type=self._type_user,
             defaults=self._defaults_user
         )
 
-    def get_all(
-        self, *scopes: str, data_type: Type[JSON_like_transposed] = None
-    ) -> Dict[str, Group]:
-        """Returns a dict composed of files names from requested directory
-        as keys and `Group` corresponding to file as values.
-
-        Parameters
-            *scopes: `str`
-                The path elements leading to directory
-
-        Returns
-            Dict[`str`, `Group`]
-
-        """
-        if not data_type:
-            data_type = self._type_globals
-
-        path_to_folder, files = self._get_folder(*scopes)
-
-        paths = [f"{path_to_folder}/{file}" for file in files]
-        groups = [Group(path, data_type=data_type) for path in paths]
-
-        files_without_extension = [file[:-len(self.EXTENSION)] for file in files]
-        return {f: g for f, g in zip(files_without_extension, groups)}
-
-    def get_all_channels(self) -> Dict[int, Group]:
+    def all_channels(self) -> Dict[int, Group]:
         """Returns a dict composed of `GuildChannel` ids as keys and
         `Group` corresponding to `GuildChannel` as values.
 
@@ -540,9 +472,9 @@ class Config:
             Dict[`int`, `Group`]
 
         """
-        return {int(k): v for k, v in self.get_all(self.CHANNEL, data_type=self._type_channel).items()}
+        return {int(k): v for k, v in self._get_all(self.CHANNEL, defaults=self._defaults_channel).items()}
 
-    def get_all_guilds(self) -> Dict[int, Group]:
+    def all_guilds(self) -> Dict[int, Group]:
         """Returns a dict composed of `Guild` ids as keys and
         `Group` corresponding to `Guild` as values.
 
@@ -550,9 +482,9 @@ class Config:
             Dict[`int`, `Group`]
 
         """
-        return {int(k): v for k, v in self.get_all(self.GUILD, data_type=self._type_guild).items()}
+        return {int(k): v for k, v in self._get_all(self.GUILD, defaults=self._defaults_guild).items()}
 
-    def get_all_members(self, guild: Guild) -> Dict[int, Group]:
+    def all_members(self, guild: Guild) -> Dict[int, Group]:
         """Returns a dict composed of `Member` ids as keys and
         `Group` corresponding to `Member` as values.
         /!\ As A `Member` is part of a `Guild`, `Guild` must be provided.
@@ -565,9 +497,9 @@ class Config:
             Dict[`int`, `Group`]
 
         """
-        return {int(k): v for k, v in self.get_all(self.MEMBER, guild.id, data_type=self._type_member).items()}
+        return {int(k): v for k, v in self._get_all(self.MEMBER, guild.id, defaults=self._defaults_member).items()}
 
-    def get_all_members_with_guild_id(self, guild_id: int) -> Dict[int, Group]:
+    def all_members_with_guild_id(self, guild_id: int) -> Dict[int, Group]:
         """Returns a dict composed of `Member` ids as keys and
         `Group` corresponding to `Member` as values.
         /!\ As A `Member` is part of a `Guild`, `Guild` id must be provided.
@@ -580,9 +512,9 @@ class Config:
             Dict[`int`, `Group`]
 
         """
-        return {int(k): v for k, v in self.get_all(self.MEMBER, guild_id, data_type=self._type_member).items()}
+        return {int(k): v for k, v in self._get_all(self.MEMBER, guild_id, defaults=self._defaults_member).items()}
 
-    def get_all_roles(self) -> Dict[int, Group]:
+    def all_roles(self) -> Dict[int, Group]:
         """Returns a dict composed of `Role` ids as keys and
         `Group` corresponding to `Role` as values.
 
@@ -590,9 +522,9 @@ class Config:
             Dict[`int`, `Group`]
 
         """
-        return {int(k): v for k, v in self.get_all(self.ROLE, data_type=self._type_role).items()}
+        return {int(k): v for k, v in self._get_all(self.ROLE, defaults=self._defaults_role).items()}
 
-    def get_all_users(self) -> Dict[int, Group]:
+    def all_users(self) -> Dict[int, Group]:
         """Returns a dict composed of `User` ids as keys and
         `Group` corresponding to `User` as values.
 
@@ -600,17 +532,15 @@ class Config:
             Dict[`int`, `Group`]
 
         """
-        return {int(k): v for k, v in self.get_all(self.USER, data_type=self._type_user).items()}
+        return {int(k): v for k, v in self._get_all(self.USER, defaults=self._defaults_user).items()}
 
     def clear_globals(self):
         """Sets to default every global `Group` for `self.cog`.
 
         """
-        self._clear_folder(
-            defaults=self._defaults_globals
-        )
+        self._clear_folder(defaults=self._defaults_globals)
 
-    def clear_all_channels(self):
+    def clear_channels(self):
         """Sets to default every `GuildChannel` `Group` for `self.cog`.
 
         """
@@ -619,7 +549,7 @@ class Config:
             defaults=self._defaults_channel
         )
 
-    def clear_all_guilds(self):
+    def clear_guilds(self):
         """Sets to default every `Guild` `Group` for `self.cog`.
 
         """
@@ -628,7 +558,7 @@ class Config:
             defaults=self._defaults_guild
         )
 
-    def clear_all_members(self, guild: Guild = None):
+    def clear_members(self, guild: Guild):
         """Sets to default every `Member` `Group` for `self.cog`.
         /!\ As a `Member` is part of a `Guild`, the `Guild` needs to be
         provided.
@@ -646,7 +576,25 @@ class Config:
                 defaults=self._defaults_member
             )
 
-    def clear_all_roles(self):
+    def clear_members_with_guild_id(self, guild_id: int):
+        """Sets to default every `Member` `Group` for `self.cog`.
+        /!\ As a `Member` is part of a `Guild`, the `Guild` needs to be
+        provided.
+
+        Parameters
+            guild: `Guild` = None
+                The guild to aim for
+
+        """
+        if guild:
+            self._clear_folder(
+                self.MEMBER,
+                guild_id,
+                
+                defaults=self._defaults_member
+            )
+
+    def clear_roles(self):
         """Sets to default every `Role` `Group` for `self.cog`.
 
         """
@@ -655,7 +603,7 @@ class Config:
             defaults=self._defaults_role
         )
 
-    def clear_all_users(self):
+    def clear_users(self):
         """Sets to default every `User` `Group` for `self.cog`.
 
         """
@@ -691,7 +639,7 @@ def safe_open(path: str, mode: str) -> open:
     return open(path, mode=mode)
 
 def load(
-    path: str, if_error: Union[list, dict] = [], to_object: Type[JSON_like_transposed] = None
+    path: str, if_error: Union[list, dict] = [], to_object: Type[JSON_like] = None
 ) -> JSON_like_any:
     """Loads data from file path, as a json data file.
 
