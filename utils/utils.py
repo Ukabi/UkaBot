@@ -10,10 +10,15 @@ from typing import (
     Type,
     Union
 )
+from typing import (
+    get_args,
+    get_origin
+)
 
 ############################################# GLOBALS #############################################
 
 ExtendedType = Union[type, _GenericAlias]
+One_D_Iterable = Union[list, tuple, set, frozenset]
 
 ############################################# CLASSES #############################################
 
@@ -49,14 +54,14 @@ class ImprovedList(list):
 
 ############################################ FUNCTIONS ############################################
 
-def flatten(l: Union[list, tuple]) -> list:
+def flatten(l: One_D_Iterable) -> list:
     """Flattening generic method for various usages.
 
     """
-    while any([isinstance(x, (list, tuple)) for x in l]):
+    while any([isinstance(x, get_args(One_D_Iterable)) for x in l]):
         temp = []
         for x in l:
-            temp += x if isinstance(x, (list, tuple)) else [x]
+            temp += x if isinstance(x, get_args(One_D_Iterable)) else [x]
         l = temp
     return list(l)
 
@@ -76,19 +81,20 @@ def isofclass(
 
     # verifying if cls is a subclass of at least one of given classes
     for type_ in types:
-        # typing class case
-        if type(cls) == _GenericAlias:
-            # cls and type_ have same base
-            if hasattr(type_, "__origin__") and cls.__origin__ == type_.__origin__:
-                # cls and type_ have same arguments length
-                if len(cls.__args__) == len(type_.__args__):
-                    for c_arg, t_arg in zip(cls.__args__, type_.__args__):
-                        # cls arguments are subclass of at least one type_ subclass, so True
-                        if isofclass(c_arg, t_arg):
-                            return True
+        # if both are typing classes
+        if type(cls) == _GenericAlias and type(type_) == _GenericAlias:
+            (cls_args, cls_origin) = (get_args(cls), get_origin(cls))
+            (type_args, type_origin) = (get_args(type_), get_origin(type_))
 
-        # else cls is a common class, so if cls isn't typing class
-        elif type(type_) != _GenericAlias:
+            # cls and type_ have same base and same length
+            if cls_origin == type_origin and len(cls_args) == len(type_args):
+                for c_arg, t_arg in zip(cls_args, type_args):
+                    # cls arguments are subclass of at least one type_ subclass, so True
+                    if isofclass(c_arg, t_arg):
+                        return True
+
+        # else if both are common classes
+        elif type(cls) != _GenericAlias and type(type_) != _GenericAlias:
             # and cls is subclass of type_, then True
             if issubclass(cls, type_):
                 return True
@@ -113,9 +119,9 @@ def isoftype(instance: Any, type_or_tuple: Type[Union[ExtendedType, Tuple[Extend
         # typing class case
         if type(type_) == _GenericAlias:
             # instance has same base
-            if isoftype(instance, type_.__origin__):
+            if isoftype(instance, get_origin(type_)):
                 # all instance components have same type as type_ arguments, so True
-                if all(isoftype(x, type_.__args__) for x in instance):
+                if all(isoftype(x, get_args(type_)) for x in instance):
                     return True
 
         # else type_ is a common class, so basic isinstance checking
