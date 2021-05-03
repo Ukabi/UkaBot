@@ -3,7 +3,6 @@
 #################### DISCORD ####################
 from discord import (
     Embed,
-    Emoji,
     Guild,
     Message,
     Member,
@@ -22,8 +21,17 @@ from discord.ext.commands import (
 )
 from discord.ext.commands import group
 
+##################### DATA ######################
+from .data import (
+    Combination,
+    Guild as GuildData
+)
+from .data import (
+    EmojiType,
+    RoleType
+)
+
 ##################### UTILS #####################
-from datetime import datetime as dt
 from emoji import demojize
 from typing import (
     Awaitable,
@@ -32,29 +40,21 @@ from typing import (
     Set,
     Union
 )
-from utils import Config as Cfg
-from utils import ImprovedList
 from utils import (
-    ask_confirmation,
-    can_give_role,
-    update_config
+    Config as Cfg,
+    ImprovedList
 )
+from utils import can_give_role
 from utils.checks import (
     admin,
-    admin_or_permissions
+    admin_or_permissions,
+    ask_confirmation
 )
 from utils.exceptions import InvalidArguments
 
 ############################################### COGS ##############################################
 
 class RoleByReaction(Cog):
-    TITLE = "title"
-    CHANNEL = "channel"
-    MESSAGE = "message"
-    COMBINATIONS = "combinations"
-
-    EMOJI = "emoji"
-    ROLE = "role"
 
     ######################################### CONSTRUCTOR #########################################
 
@@ -62,13 +62,13 @@ class RoleByReaction(Cog):
         self.bot = bot
         self.config = Cfg(self)
 
-        self.defaults_guild = {
-            self.TITLE: "React with corresponding emoji to get role",
-            self.CHANNEL: 0,
-            self.MESSAGE: 0,
-            self.COMBINATIONS: list()
-        }
-        self.config.defaults_guild(self.defaults_guild)
+        self.defaults = GuildData(
+            channel=0,
+            combinations=list(),
+            message=0,
+            title="React with corresponding emoji to get role"
+        )
+        self.config.defaults_guild(self.defaults)
 
         self.bot.loop.create_task(self.startup_check())
 
@@ -101,18 +101,23 @@ class RoleByReaction(Cog):
             )
 
     async def make_reactions_state(
-        self, reactions: List[Reaction], guild: Guild,
-        combinations: List[Dict[str, Union[int, str]]]
+        self, reactions: List[Reaction], guild: Guild, combinations: List[Combination]
     ) -> Dict[int, Set[int]]:
+        # Dict[int, Set[int]]
         state_by_role = dict()
         for reaction in reactions:
             try:
                 combination = ImprovedList(combinations).get_item(
                     v=str(reaction.emoji),
-                    key=lambda c: c[self.EMOJI]
+                    key=lambda c: c.emoji
                 )
-                role = combination[self.ROLE]
+            except ValueError: # emoji not registered in combinations list
+                continue
 
+            else:
+                role = combination.role
+
+                # Set[int]
                 members = set()
                 async for user in reaction.users():
                     if user.id != self.bot.user.id and isinstance(user, Member):
@@ -120,10 +125,10 @@ class RoleByReaction(Cog):
 
                 state_by_role[role] = members
 
-            except ValueError:
-                continue
-
+        # Set[int]
         members = set().union(*(state_by_role.values()))
+
+        # Dict[int, Set[int]]
         state_by_members = dict()
         for member in members:
             roles = {r for r, ms in state_by_role.items() if member in ms}
@@ -131,35 +136,32 @@ class RoleByReaction(Cog):
 
         return state_by_members
 
-    def make_members_state(
-        self, guild: Guild, roles: List[int]
-    ) -> Dict[int, Set[int]]:
+    def make_members_state(self, guild: Guild, roles: List[int]) -> Dict[int, Set[int]]:
+        # Dict[int, Set[int]]
         state = dict()
         for member in guild.members:
             state[member.id] = {role.id for role in member.roles if role.id in roles}
 
         return state
 
-        # Just for the fun
-        # return {member.id: {role.id for role in member.roles if role in roles} for member in guild.members}
-
     def compare_reaction_members(
         self, react_state: Dict[int, Set[int]], memb_state: Dict[int, Set[int]]
     ) -> Dict[int, List[int]] and Dict[int, List[int]]:
+        # Dict[int, Set[int]]
         add_roles = dict()
         for member in react_state.keys():
             to_add = react_state[member] - memb_state.get(member, set())
             add_roles[member] = list(to_add)
 
+        # Dict[int, Set[int]]
         remove_roles = dict()
         for member in memb_state.keys():
             to_remove = memb_state[member] - react_state.get(member, set())
             remove_roles[member] = list(to_remove)
+        # removing empty fields
+        remove_roles = {member: roles for member, roles in remove_roles.items() if roles}
 
-        return add_roles, {member: roles for member, roles in remove_roles.items() if roles}
-
-        # Just for the fun
-        # return {member: role - memb_state.get(member, set()) for member, role in react_state.items()}, {member: role - react_state.get(member, set()) for member, role in memb_state.items()}
+        return add_roles, remove_roles
 
     async def edit_members_roles(
         self, guild: Guild,
@@ -177,20 +179,21 @@ class RoleByReaction(Cog):
                 roles = [guild.get_role(role) for role in roles]
                 await member.remove_roles(*[role for role in roles if role])
 
-    async def treat_guild(self, guild: Guild):
-        guild_config = self.config.guild(guild)
-        guild_data = guild_config.get()
+    async def treat_guild(self, guild: Guild, guild_data: GuildData):
+        channel_id = guild_data.channel
+        message_id = guild_data.message
+        combinations = guild_data.combinations
 
-        channel_id = guild_data[self.CHANNEL]
-        message_id = guild_data[self.MESSAGE]
-        combinations = guild_data[self.COMBINATIONS]
         try:
             message = await self.find_rbr_message(
                 guild=guild,
                 channel_id=channel_id,
                 message_id=message_id
             )
+        except InvalidArguments: # message not found
+            pass
 
+        else:
             reactions_state = await self.make_reactions_state(
                 guild=guild,
                 reactions=message.reactions,
@@ -198,7 +201,7 @@ class RoleByReaction(Cog):
             )
             members_state = self.make_members_state(
                 guild=guild,
-                roles=[c[self.ROLE] for c in combinations]
+                roles=[c.role for c in combinations]
             )
 
             to_add, to_remove = self.compare_reaction_members(
@@ -211,17 +214,15 @@ class RoleByReaction(Cog):
                 to_remove=to_remove
             )
 
-        except InvalidArguments:
-            pass
-
     async def startup_check(self):
         await self.bot.wait_until_ready()
 
-        guilds_configs = self.config.get_all_guilds()
+        guilds_configs = self.config.all_guilds()
         for guild_id, guild_config in guilds_configs.items():
             guild = self.bot.get_guild(guild_id)
             if guild:
-                await self.treat_guild(guild)
+                guild_data = guild_config.get()
+                await self.treat_guild(guild, guild_data)
 
     ########################################### EVENTS ############################################
 
@@ -245,15 +246,15 @@ class RoleByReaction(Cog):
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
 
-        message_id = guild_data[self.MESSAGE]
+        message_id = guild_data.message
         if payload.message_id == message_id:
-            combinations = guild_data[self.COMBINATIONS]
+            combinations = guild_data.combinations
             emoji = str(payload.emoji)
 
             role = None
             for c in combinations:
-                if c[self.EMOJI] == emoji:
-                    role = guild.get_role(c[self.ROLE])
+                if c.emoji == emoji:
+                    role = guild.get_role(c.role)
                     break
 
             if role:
@@ -275,9 +276,7 @@ class RoleByReaction(Cog):
 
     ################################## ROLE BY REACTION COMMANDS ##################################
 
-    async def import_emoji(
-        self, ctx: Context, emoji: Union[int, str, Emoji]
-    ) -> str:
+    async def import_emoji(self, ctx: Context, emoji: EmojiType) -> str:
         emoji = str(emoji)
 
         try:
@@ -296,12 +295,9 @@ class RoleByReaction(Cog):
 
         return emoji
 
-    async def import_role(
-        self, ctx: Context, role: Union[int, str, Role]
-    ) -> Role:
+    async def import_role(self, ctx: Context, role: RoleType) -> Role:
         try:
-            role = await RoleConverter().convert(ctx, str(role))
-            return role
+            return await RoleConverter().convert(ctx, str(role))
         except BadArgument:
             raise InvalidArguments(
                 ctx=ctx,
@@ -309,9 +305,7 @@ class RoleByReaction(Cog):
                 message=f"Couldn't load {role} role"
             )
 
-    async def add_reactions(
-        self, ctx: Context, message: Message, emojis: List[str]
-    ):
+    async def add_reactions(self, ctx: Context, message: Message, emojis: List[str]):
         for emoji in emojis:
             try:
                 emoji = await self.import_emoji(ctx, emoji)
@@ -320,15 +314,14 @@ class RoleByReaction(Cog):
                 print(f"ROLEBYREACTION_COG: couldn't react with {emoji} on {message.jump_url}")
 
     def rbr_message_content(
-        self, guild: Guild, title: str,
-        combinations: List[Dict[str, Union[str, int]]]
+        self, guild: Guild, title: str, combinations: List[Combination]
     ) -> Embed:
         guild_data = self.config.guild(guild).get()
 
         content = "" if combinations else "No combination registered yet"
         for combination in combinations:
-            emoji = combination.get(self.EMOJI)
-            role = guild.get_role(combination.get(self.ROLE))
+            emoji = combination.emoji
+            role = guild.get_role(combination.role)
 
             content += f"{emoji} - {role.name}" + "\n"
 
@@ -339,7 +332,7 @@ class RoleByReaction(Cog):
 
     async def edit_rbr_message(
         self, ctx: Context, channel_id: int, message_id: int, title: str,
-        combinations: List[Dict[str, Union[int, str]]]
+        combinations: List[Combination]
     ) -> Message:
         guild = ctx.guild
 
@@ -350,7 +343,7 @@ class RoleByReaction(Cog):
             await self.add_reactions(
                 ctx=ctx,
                 message=message,
-                emojis=[c[self.EMOJI] for c in combinations]
+                emojis=[c.emoji for c in combinations]
             )
             return message
 
@@ -362,42 +355,37 @@ class RoleByReaction(Cog):
             )
 
     @admin_or_permissions()
-    @group(name='rbr')
-    async def rbr_group(self, ctx: Context):
+    @group()
+    async def rbr(self, ctx: Context):
         pass
 
     @admin()
-    @rbr_group.command(name='title')
-    async def rbr_title(self, ctx: Context, *, title: str):
-        """**[text]** : edits the rbr message's title."""
-        update_config(
-            config=self.config.guild(ctx.guild),
-            attribute=self.TITLE,
-            value=title
-        )
+    @rbr.command()
+    async def title(self, ctx: Context, *, title: str):
+        guild_config = self.config.guild(ctx.guild)
+        guild_data = guild_config.get()
+
+        guild_data.title = title
+        guild_config.set(guild_data)
 
         embed = Embed(
-            title='Message Changed',
-            description=f'Successfully updated welcome message to {title}'
+            title='Title Changed',
+            description=f'Successfully updated title to {title}'
         )
         await ctx.send(embed=embed)
 
     @admin_or_permissions(manage_roles=True)
-    @rbr_group.command(name='add')
-    async def rbr_add(
-        self, ctx: Context,
-        emoji: Union[int, str, Emoji], *, role: Union[int, str, Role]
-    ):
-        """**[emoji] [role]** : links an emoji with a role."""
+    @rbr.command()
+    async def add(self, ctx: Context, emoji: EmojiType, *, role: RoleType):
         guild = ctx.guild
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
 
-        combinations = guild_data[self.COMBINATIONS]
+        combinations = guild_data.combinations
 
         try:
             emoji = await self.import_emoji(ctx, emoji)
-            if emoji in [c[self.EMOJI] for c in combinations]:
+            if emoji in [c.emoji for c in combinations]:
                 raise InvalidArguments(
                     ctx=ctx,
                     title="Role Error",
@@ -405,7 +393,7 @@ class RoleByReaction(Cog):
                 )
 
             role = await self.import_role(ctx, role)
-            if role.id in [c[self.ROLE] for c in combinations]:
+            if role.id in [c.role for c in combinations]:
                 raise InvalidArguments(
                     ctx=ctx,
                     title="Role Error",
@@ -419,17 +407,17 @@ class RoleByReaction(Cog):
                     message=f"Bot doesn't have enough rights to give role"
                 )
 
-            new = {
-                self.EMOJI: emoji,
-                self.ROLE: role.id
-            }
+            new = Combination(
+                emoji=emoji,
+                role=role.id
+            )
             combinations.append(new)
 
             await self.edit_rbr_message(
                 ctx=ctx,
-                channel_id=guild_data[self.CHANNEL],
-                message_id=guild_data[self.MESSAGE],
-                title=guild_data[self.TITLE],
+                channel_id=guild_data.channel,
+                message_id=guild_data.message,
+                title=guild_data.title,
                 combinations=combinations
             )
 
@@ -446,16 +434,13 @@ class RoleByReaction(Cog):
             await error.execute()
 
     @admin_or_permissions(manage_roles=True)
-    @rbr_group.command(name='remove')
-    async def rbr_remove(
-        self, ctx: Context, *, element: Union[int, str, Role, Emoji]
-    ):
-        """**[emoji or role]** : removes a link from the list."""
+    @rbr.command()
+    async def remove(self, ctx: Context, *, element: Union[EmojiType, RoleType]):
         guild = ctx.guild
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
 
-        combinations = guild_data[self.COMBINATIONS]
+        combinations = guild_data.combinations
 
         try:
             if not combinations:
@@ -484,7 +469,7 @@ class RoleByReaction(Cog):
                     ctx=ctx,
                     message="Argument wasn't found in data"
                 )
-            
+
             for combination in combinations:
                 if combination[var] == element:
                     combinations.remove(combination)
@@ -492,17 +477,17 @@ class RoleByReaction(Cog):
 
             await self.edit_rbr_message(
                 ctx=ctx,
-                channel_id=guild_data[self.CHANNEL],
-                message_id=guild_data[self.MESSAGE],
-                title=guild_data[self.TITLE],
+                channel_id=guild_data.channel,
+                message_id=guild_data.message,
+                title=guild_data.title,
                 combinations=combinations
             )
 
-            guild_data[self.COMBINATIONS] = combinations
+            guild_data.combinations = combinations
             guild_config.set(guild_data)
 
-            emoji = await EmojiConverter().convert(ctx, combination[self.EMOJI])
-            role = guild.get_role(combination[self.ROLE])
+            emoji = await EmojiConverter().convert(ctx, combination.emoji)
+            role = guild.get_role(combination.role)
 
             embed = Embed(
                 title="Combination Removed",
@@ -514,32 +499,31 @@ class RoleByReaction(Cog):
             await error.execute()
 
     @admin()
-    @rbr_group.command(name='create')
-    async def rbr_create(self, ctx: Context):
+    @rbr.command()
+    async def create(self, ctx: Context):
         guild = ctx.guild
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
 
         embed = self.rbr_message_content(
             guild=guild,
-            title=guild_data[self.TITLE],
-            combinations=guild_data[self.COMBINATIONS]
+            title=guild_data.title,
+            combinations=guild_data.combinations
         )
         message = await ctx.send(embed=embed)
         await self.add_reactions(
             ctx=ctx,
             message=message,
-            emojis=[c[self.EMOJI] for c in guild_data[self.COMBINATIONS]]
+            emojis=[c.emoji for c in guild_data.combinations]
         )
 
-        guild_data[self.CHANNEL] = message.channel.id
-        guild_data[self.MESSAGE] = message.id
+        guild_data.channel = message.channel.id
+        guild_data.message = message.id
         guild_config.set(guild_data)
 
     @admin()
-    @rbr_group.command(name='message')
-    async def rbr_message(self, ctx: Context, channel_id: int, message_id: int):
-        """: sends the role by reaction message members can react on."""
+    @rbr.command()
+    async def message(self, ctx: Context, channel_id: int, message_id: int):
         guild = ctx.guild
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
@@ -549,8 +533,8 @@ class RoleByReaction(Cog):
                 ctx=ctx,
                 channel_id=channel_id,
                 message_id=message_id,
-                title=guild_data[self.TITLE],
-                combinations=guild_data[self.COMBINATIONS]
+                title=guild_data.title,
+                combinations=guild_data.combinations
             )
 
             guild_data[self.CHANNEL] = channel_id
@@ -567,9 +551,8 @@ class RoleByReaction(Cog):
             await error.execute()
 
     @admin_or_permissions(manage_roles=True)
-    @rbr_group.command(name='show')
-    async def rbr_show(self, ctx: Context):
-        """: shows the associations between emojis and role."""
+    @rbr.command()
+    async def show(self, ctx: Context):
         guild = ctx.guild
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
@@ -577,14 +560,13 @@ class RoleByReaction(Cog):
         embed = self.rbr_message_content(
             guild=guild,
             title="Role By Reaction Template",
-            combinations=guild_data[self.COMBINATIONS]
+            combinations=guild_data.combinations
         )
         await ctx.send(embed=embed)
 
     @admin()
-    @rbr_group.command(name='reset')
-    async def rbr_reset(self, ctx: Context):
-        """: resets the associations list."""
+    @rbr.command()
+    async def reset(self, ctx: Context):
         answer = await ask_confirmation(
             ctx=ctx,
             bot=self.bot
@@ -606,8 +588,8 @@ class RoleByReaction(Cog):
             await ctx.send(embed=embed)
 
     @admin()
-    @rbr_group.command(name='update')
-    async def update_rbr_message(self, ctx: Context):
+    @rbr.command()
+    async def update(self, ctx: Context):
         guild = ctx.guild
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
@@ -615,10 +597,10 @@ class RoleByReaction(Cog):
         try:
             await self.edit_rbr_message(
                 ctx=ctx,
-                channel_id=guild_data[self.CHANNEL],
-                message_id=guild_data[self.MESSAGE],
-                title=guild_data[self.TITLE],
-                combinations=guild_data[self.COMBINATIONS]
+                channel_id=guild_data.channel,
+                message_id=guild_data.message,
+                title=guild_data.title,
+                combinations=guild_data.combinations
             )
 
         except InvalidArguments as error:
