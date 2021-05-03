@@ -15,45 +15,46 @@ from discord.ext.commands import (
 )
 from discord.ext.commands import group
 
+##################### DATA ######################
+from .data import Guild as GuildData
+
 ##################### UTILS #####################
 from typing import Union
 from utils import Config as Cfg
-from utils import (
-    admin,
-    update_config
-)
+from utils.checks import admin
 from utils.exceptions import InvalidArguments
 
 ############################################## COGS ###############################################
 
 class Welcome(Cog):
-    TITLE = 'title'
-    MESSAGE = 'message'
-    CHANNEL = 'channel'
 
-    ###############################################################################################
+    ######################################### CONSTRUCTOR #########################################
 
     def __init__(self, bot: Bot):
-        defaults = {
-            self.CHANNEL: 0,
-            self.TITLE: "Welcome!",
-            self.MESSAGE: "Welcome to the server {0.mention}!"
-        }
-        self.config = Cfg(self, defaults=defaults)
+        self.config = Cfg(self)
+
+        defaults = GuildData(
+            channel=0,
+            title="Welcome!",
+            message="Welcome to the server {0.mention}!"
+        )
+        self.config.defaults_guild(defaults)
 
     ########################################### EVENTS ############################################
 
     @Cog.listener()
     async def on_member_join(self, member: Member):
         guild = member.guild
+
+        # GuildData
         guild_data = self.config.guild(guild).get()
 
-        channel_id = guild_data[self.CHANNEL]
+        channel_id = guild_data.channel
         channel = guild.get_channel(channel_id)
 
         if channel:
-            title = guild_data[self.TITLE]
-            message  = guild_data[self.MESSAGE]
+            title = guild_data.title
+            message  = guild_data.message
             embed = Embed(
                 title=title.format(member),
                 description=message.format(member)
@@ -64,34 +65,16 @@ class Welcome(Cog):
     ###################################### WELCOME COMMANDS #######################################
 
     @admin()
-    @group(name='welcome')
-    async def welcome_group(self, ctx: Context):
+    @group()
+    async def welcome(self, ctx: Context):
         pass
 
     @admin()
-    @welcome_group.command(name='channel')
-    async def welcome_channel(
-        self, ctx: Context, channel: Union[TextChannel, str, int]
-    ):
-        """**[#channel or channel name]** :
-        sets the channel where to send messages.
-        """
+    @welcome.command()
+    async def channel(self, ctx: Context, channel: Union[TextChannel, str, int]):
         try:
             if not isinstance(channel, TextChannel):
                 channel = await TextChannelConverter().convert(ctx, str(channel))
-
-            update_config(
-                config=self.config.guild(ctx.guild),
-                attribute=self.CHANNEL,
-                value=channel.id
-            )
-
-            embed = Embed(
-                title='Channel Changed',
-                description=f'Successfully updated channel to {channel.mention}'
-            )
-            await ctx.send(embed=embed)
-
         except BadArgument:
             error = InvalidArguments(
                 ctx=ctx,
@@ -99,16 +82,28 @@ class Welcome(Cog):
                 message='Channel not found or not provided'
             )
             await error.execute()
+            return
+
+        else:
+            guild_config = self.config.guild(ctx.guild)
+            guild_data = guild_config.get()
+            guild_data.channel = channel.id
+            guild_config.set(guild_data)
+
+            embed = Embed(
+                title='Channel Changed',
+                description=f'Successfully updated channel to {channel.mention}'
+            )
+            await ctx.send(embed=embed)
 
     @admin()
-    @welcome_group.command(name='message')
-    async def welcome_message(self, ctx: Context, *, message: str):
-        """**[message]** : edits the welcome message's text."""
-        update_config(
-            config=self.config.guild(ctx.guild),
-            attribute=self.MESSAGE,
-            value=message
-        )
+    @welcome.command()
+    async def message(self, ctx: Context, *, message: str):
+        guild_config = self.config.guild(ctx.guild)
+        guild_data = guild_config.get()
+
+        guild_data.message = message
+        guild_config.set(guild_data)
 
         embed = Embed(
             title='Message Changed',
@@ -120,14 +115,13 @@ class Welcome(Cog):
         await ctx.send(embed=embed)
 
     @admin()
-    @welcome_group.command(name='title')
-    async def welcome_title(self, ctx: Context, *, title: str):
-        """**[text]** : edits the welcome message's title."""
-        update_config(
-            config=self.config.guild(ctx.guild),
-            attribute=self.TITLE,
-            value=title
-        )
+    @welcome.command()
+    async def title(self, ctx: Context, *, title: str):
+        guild_config = self.config.guild(ctx.guild)
+        guild_data = guild_config.get()
+
+        guild_data.title = title
+        guild_config.set(guild_data)
 
         embed = Embed(
             title='Message Changed',
