@@ -75,10 +75,8 @@ class Group:
                 The data to set
 
         """
-        # preventing from useless conversions and disk usage, unless data is modified
-        if data != self._data:
-            write(self.file, data)
-            self._data = data
+        write(self.file, data)
+        self._data = data
 
 class Config:
     """Represents a `Cog` configuration files tree.

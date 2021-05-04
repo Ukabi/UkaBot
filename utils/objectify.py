@@ -150,7 +150,7 @@ def dictify(iterable: JSON_like_transposed) -> JSON_like_nottransposed:
     elif isoftype(iterable, List[Objectify]):
         return [x._compile() for x in iterable]
     elif isinstance(iterable, list):
-        return [dictify(x) for x in iterable]
+        return iterable
     else:
         return dict(iterable)
 
