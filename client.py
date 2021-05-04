@@ -22,7 +22,6 @@ from Welcome import Welcome
 
 ##################### UTILS #####################
 from typing import (
-    Iterable,
     List,
     Union
 )
@@ -45,9 +44,10 @@ COGS = {
     Scheduler,
     Welcome
 }
+NAMES_COGS_MAP = {cog.__name__.lower(): cog for cog in COGS}
 
 CONFIG_PATH = 'config.json'
-BOT_CONFIG = load(CONFIG_PATH, {})
+BOT_CONFIG = load(CONFIG_PATH, if_error={})
 
 PREFIX = BOT_CONFIG.get('prefix', None)
 while not PREFIX:
@@ -71,7 +71,7 @@ bot = Bot(
 
 ############################################ FUNCTIONS ############################################
 
-def load_cogs(client: Bot, cogs: Iterable[Cog]):
+def load_cogs(client: Bot, cogs: List[Cog]):
     """Loads cogs on client.
 
     Parameters
@@ -85,18 +85,18 @@ def load_cogs(client: Bot, cogs: Iterable[Cog]):
         cog = cog(client)
         client.add_cog(cog)
 
-def unload_cogs(client: Bot, cogs: Iterable[str]):
+def unload_cogs(client: Bot, cogs: List[Cog]):
     """Unloads cogs from client.
 
     Parameters
         client: `Bot`
             The client to load the cogs on
         cogs: `List[Cog]`
-            The `list` of `str` to unload, strings being the `Cog` class name
+            The `list` of `Cog` to unload
 
     """
     for cog in cogs:
-        client.remove_cog(cog)
+        client.remove_cog(cog.__name__)
 
 def get_commands(instance: Union[Bot, Group]) -> List[command]:
     """Gets loaded commands from client.
@@ -125,9 +125,8 @@ async def on_ready():
     """This runs when bot has done logging in and setting up.
 
     """
-    names_cogs_map = {cog.__name__.lower(): cog for cog in COGS}
-    cog_names_to_load = load(COG_PATH)
-    cogs_to_load = {names_cogs_map[cog_name] for cog_name in cog_names_to_load}
+    cog_names_to_load = load(COG_PATH, if_error=[])
+    cogs_to_load = {NAMES_COGS_MAP[cog_name] for cog_name in cog_names_to_load}
     load_cogs(bot, cogs_to_load)
 
     loaded_cogs_names = sorted({name.lower() for name in bot.cogs.keys()})
@@ -148,77 +147,71 @@ async def cog_group(ctx: Context):
 
 @cog_group.command(name='load')
 async def cog_load(ctx: Context, *, cog_names: str):
+    loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
+
+    cog_names = cog_names.lower().split()
+
     try:
-        names_cogs_map = {cog.__name__.lower(): cog for cog in COGS}
-        loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
-
-        cog_names = cog_names.lower().split()
-
         to_load = set()
         for cog_name in cog_names:
             if cog_name not in loaded_cog_names:
-                to_load.add(names_cogs_map[cog_name])
+                to_load.add(NAMES_COGS_MAP[cog_name])
             else:
                 raise ValueError
-
-        load_cogs(bot, to_load)
-        write(COG_PATH, load(COG_PATH) + cog_names)
-
-        await ctx.send(f'Successfully loaded {", ".join(cog_names)}')
-
     except KeyError:
         error = InvalidArguments(
             ctx=ctx,
             message=f"{cog_name} not found"
         )
-        
         await error.execute()
-
     except ValueError:
         error = InvalidArguments(
             ctx=ctx,
             message=f"{cog_name} already loaded"
         )
-
         await error.execute()
+
+    else:
+        load_cogs(bot, to_load)
+        write(COG_PATH, [name.lower() for name in bot.cogs.keys()])
+
+        await ctx.send(f'Successfully loaded {", ".join(cog_names)}')
 
 @cog_group.command(name='unload')
 async def cog_unload(ctx: Context, *, cog_names: str):
+    loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
+
+    cog_names = cog_names.lower().split()
+
     try:
-        names_cogs_map = {cog.__name__.lower(): cog.__name__ for cog in COGS}
-        loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
-
-        cog_names = cog_names.lower().split()
-
         to_unload = set()
         for cog_name in cog_names:
             if cog_name in loaded_cog_names:
-                to_unload.add(names_cogs_map[cog_name])
-            elif cog_name not in names_cogs_map.keys():
+                to_unload.add(NAMES_COGS_MAP[cog_name])
+            elif cog_name not in NAMES_COGS_MAP.keys():
                 raise KeyError
             else:
                 raise ValueError
-
-        unload_cogs(bot, to_unload)
-        write(COG_PATH, [cog_name for cog_name in load(COG_PATH) if cog_name not in cog_names])
-
-        await ctx.send(f'Successfully unloaded {", ".join(cog_names)}')
-
     except KeyError:
         error = InvalidArguments(
             ctx=ctx,
             message=f"{cog_name} not found"
         )
-        
         await error.execute()
-
     except ValueError:
         error = InvalidArguments(
             ctx=ctx,
             message=f"{cog_name} not loaded"
         )
-
         await error.execute()
+
+    else:
+        unload_cogs(bot, to_unload)
+
+        loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
+        write(COG_PATH, [cog_name for cog_name in loaded_cog_names if cog_name not in cog_names])
+
+        await ctx.send(f'Successfully unloaded {", ".join(cog_names)}')
 
 @cog_group.command(name='list')
 async def cog_list(ctx: Context):
@@ -229,7 +222,7 @@ async def cog_list(ctx: Context):
 
 @bot.command(name='commands')
 async def bot_commands(ctx: Context):
-    command_names = [c.name for c in get_commands(bot)]
+    command_names = [f"{c.full_parent_name} {c.name}" for c in get_commands(bot)]
     message = ", ".join(command_names) if command_names else "No command loaded"
 
     await ctx.send(message)
