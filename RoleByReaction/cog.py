@@ -3,6 +3,7 @@
 #################### DISCORD ####################
 from discord import (
     Embed,
+    Emoji,
     Guild,
     Message,
     Member,
@@ -44,11 +45,11 @@ from utils import (
     Config as Cfg,
     ImprovedList
 )
-from utils import can_give_role
 from utils.checks import (
     admin,
     admin_or_permissions,
-    ask_confirmation
+    ask_confirmation,
+    can_give_role
 )
 from utils.exceptions import InvalidArguments
 
@@ -249,7 +250,10 @@ class RoleByReaction(Cog):
         message_id = guild_data.message
         if payload.message_id == message_id:
             combinations = guild_data.combinations
-            emoji = str(payload.emoji)
+
+            emoji = payload.emoji
+            emoji = emoji.id if emoji.id else str(emoji)
+            print(emoji, combinations)
 
             role = None
             for c in combinations:
@@ -276,11 +280,11 @@ class RoleByReaction(Cog):
 
     ################################## ROLE BY REACTION COMMANDS ##################################
 
-    async def import_emoji(self, ctx: Context, emoji: EmojiType) -> str:
+    async def import_emoji(self, ctx: Context, emoji: EmojiType) -> Union[str, Emoji]:
         emoji = str(emoji)
 
         try:
-            emoji = str(await EmojiConverter().convert(ctx, emoji))
+            emoji = await EmojiConverter().convert(ctx, emoji)
         except BadArgument:
             temp = demojize(emoji)
             if any([emoji == temp,               # Not an emoji
@@ -320,7 +324,8 @@ class RoleByReaction(Cog):
 
         content = "" if combinations else "No combination registered yet"
         for combination in combinations:
-            emoji = combination.emoji
+            emoji = self.bot.get_emoji(combination.emoji)
+            emoji = str(emoji) if emoji else combination.emoji
             role = guild.get_role(combination.role)
 
             content += f"{emoji} - {role.name}" + "\n"
@@ -406,9 +411,12 @@ class RoleByReaction(Cog):
                     title="Role Error",
                     message=f"Bot doesn't have enough rights to give role"
                 )
+        except InvalidArguments as error:
+            await error.execute()
 
+        else:
             new = Combination(
-                emoji=emoji,
+                emoji=emoji.id if hasattr(emoji, "id") else emoji,
                 role=role.id
             )
             combinations.append(new)
@@ -421,7 +429,7 @@ class RoleByReaction(Cog):
                 combinations=combinations
             )
 
-            guild_data[self.COMBINATIONS] = combinations
+            guild_data.combinations = combinations
             guild_config.set(guild_data)
 
             embed = Embed(
@@ -429,9 +437,6 @@ class RoleByReaction(Cog):
                 description=f"{emoji} successfully linked with {role}"
             )
             await ctx.send(embed=embed)
-
-        except InvalidArguments as error:
-            await error.execute()
 
     @admin_or_permissions(manage_roles=True)
     @rbr.command()
@@ -452,12 +457,13 @@ class RoleByReaction(Cog):
 
             try:
                 element = await self.import_emoji(ctx, element)
-                var = self.EMOJI
+                element = element.id if hasattr(element, "id") else element
+                var = "emoji"
             except InvalidArguments:
                 try:
                     role = await self.import_role(ctx, element)
                     element = role.id
-                    var = self.ROLE
+                    var = "role"
                 except InvalidArguments:
                     raise InvalidArguments(
                         ctx=ctx,
@@ -469,7 +475,10 @@ class RoleByReaction(Cog):
                     ctx=ctx,
                     message="Argument wasn't found in data"
                 )
+        except InvalidArguments as error:
+            await error.execute()
 
+        else:
             for combination in combinations:
                 if combination[var] == element:
                     combinations.remove(combination)
@@ -486,7 +495,7 @@ class RoleByReaction(Cog):
             guild_data.combinations = combinations
             guild_config.set(guild_data)
 
-            emoji = await EmojiConverter().convert(ctx, combination.emoji)
+            emoji = await self.import_emoji(ctx, combination.emoji)
             role = guild.get_role(combination.role)
 
             embed = Embed(
@@ -494,9 +503,6 @@ class RoleByReaction(Cog):
                 description=f"{emoji} and {role} successfully unlinked"
             )
             await ctx.send(embed=embed)
-
-        except InvalidArguments as error:
-            await error.execute()
 
     @admin()
     @rbr.command()
@@ -536,9 +542,12 @@ class RoleByReaction(Cog):
                 title=guild_data.title,
                 combinations=guild_data.combinations
             )
+        except InvalidArguments as error:
+            await error.execute()
 
-            guild_data[self.CHANNEL] = channel_id
-            guild_data[self.MESSAGE] = message_id
+        else:
+            guild_data.channel = channel_id
+            guild_data.message = message_id
             guild_config.set(guild_data)
 
             embed = Embed(
@@ -546,9 +555,6 @@ class RoleByReaction(Cog):
                 description=f"[jump to]({message.jump_url})"
             )
             await ctx.send(embed=embed)
-
-        except InvalidArguments as error:
-            await error.execute()
 
     @admin_or_permissions(manage_roles=True)
     @rbr.command()
