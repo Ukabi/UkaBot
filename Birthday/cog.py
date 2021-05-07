@@ -188,9 +188,14 @@ class Birthday(Cog):
 
             member_config.set(member_data)
 
+            if ctx.author == member:
+                desc = f"Birthday set to {date}"
+            else:
+                desc = f"Birthday of {member} has been set to {date}"
+
             embed = Embed(
                 title="Birthday Set",
-                description=f"Birthday of {member} has been set to {date}"
+                description=desc
             )
             await ctx.send(embed=embed)
 
@@ -200,9 +205,9 @@ class Birthday(Cog):
 
     @admin()
     @birthday.command()
-    async def forceset(self, ctx: Context, member_id, day: int, month: int):
+    async def forceset(self, ctx: Context, member_id: int, day: int, month: int):
         try:
-            member = ctx.guild.get_member(member_id)
+            member = ctx.guild.get_member(int(member_id))
             if member:
                 await self._set_birthday(ctx, member, day, month)
             else:
@@ -213,6 +218,12 @@ class Birthday(Cog):
                 )
         except InvalidArguments as error:
             await error.execute()
+        except TypeError:
+            error = InvalidArguments(
+                ctx=ctx,
+                title="Argument Error",
+                message="Provided member id couldn't be parsed"
+            )
 
     @birthday.command()
     async def remove(self, ctx: Context):
