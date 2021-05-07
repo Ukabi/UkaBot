@@ -122,7 +122,10 @@ class RoleByReaction(Cog):
         guild_data = guild_config.get()
 
         guild_data.title = title
-        await self._edit_rbr_message(ctx, guild_data)
+        try:
+            await self._edit_rbr_message(ctx, guild_data)
+        except InvalidArguments:
+            pass
 
         guild_config.set(guild_data)
 
@@ -175,7 +178,10 @@ class RoleByReaction(Cog):
             combinations.append(new)
 
             guild_data.combinations = combinations
-            await self._edit_rbr_message(ctx, guild_data)
+            try:
+                await self._edit_rbr_message(ctx, guild_data)
+            except InvalidArguments:
+                pass
 
             guild_config.set(guild_data)
 
@@ -232,7 +238,10 @@ class RoleByReaction(Cog):
                     break
 
             guild_data.combinations = combinations
-            await self._edit_rbr_message(ctx, guild_data)
+            try:
+                await self._edit_rbr_message(ctx, guild_data)
+            except InvalidArguments:
+                pass
 
             guild_config.set(guild_data)
 
