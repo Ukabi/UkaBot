@@ -60,7 +60,7 @@ class Poll(Cog):
                 # Dict[int, GuildData]
                 guild_data = self.config.guild(guild).get()
 
-                answers_list = [f'{self.FIGURES[n+1]}: {p}' for n, p in enumerate(args)]
+                answers_list = [f'{FIGURES[n+1]}: {p}' for n, p in enumerate(args)]
                 answers = "\n\n".join(answers_list)
 
                 channel = guild.get_channel(guild_data.channel)

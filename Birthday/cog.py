@@ -93,7 +93,7 @@ class Birthday(Cog):
                     if guild:
                         await self.treat_guild(
                             guild,
-                            guild_config,
+                            guild_config.get(),
                             self.config.all_members(guild)
                         )
 
@@ -109,7 +109,7 @@ class Birthday(Cog):
         guild = ctx.guild
         await self.treat_guild(
             guild,
-            self.config.guild(guild),
+            self.config.guild(guild).get(),
             self.config.all_members(guild)
         )
 
@@ -255,7 +255,7 @@ class Birthday(Cog):
     ######################################## CLASS METHODS ########################################
 
     @classmethod
-    async def treat_guild(cls, guild: Guild, guild_config: Cfg, members_configs: Dict[int, Group]):
+    async def treat_guild(cls, guild: Guild, guild_data: GuildData, members_configs: Dict[int, Group]):
         # importing Members from their ids
         # Dict[Member, Group]
         members_configs = {guild.get_member(i): g for i, g in members_configs.items()}
@@ -272,9 +272,6 @@ class Birthday(Cog):
         members_birthdays = {m: g.get().birthday for m, g in members_configs.items()}
         # List[Member]
         to_treat = [m for m, b in members_birthdays.items() if today == b]
-
-        # importing Guild data
-        guild_data = guild_config.get()
 
         # sending birthday message
         channel_id = guild_data.channel

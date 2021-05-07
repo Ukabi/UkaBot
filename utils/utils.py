@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Set,
     Tuple,
     Type,
     Union
@@ -130,3 +131,10 @@ def isoftype(instance: Any, type_or_tuple: Type[Union[ExtendedType, Tuple[Extend
 
     # every other case if False
     return False
+
+def revert_dict(d: Dict[Any, One_D_Iterable]) -> Dict[Any, Set[Any]]:
+    if d:
+        values = set.union(*(d.values()))
+        return {v: {k for k, vs in d.items() if v in vs} for v in values}
+    else:
+        return {}
