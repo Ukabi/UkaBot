@@ -14,7 +14,7 @@ from discord.ext.commands import command
 from Birthday import Birthday
 #from CleanUp import CleanUp
 #from EmojiData import EmojiData
-from EmojiManager import EmojiManager
+#from EmojiManager import EmojiManager
 from Poll import Poll
 from RoleByReaction import RoleByReaction
 from Scheduler import Scheduler
@@ -38,7 +38,7 @@ COGS = {
     Birthday,
 #    CleanUp,
 #    EmojiData,
-    EmojiManager,
+#    EmojiManager,
     Poll,
     RoleByReaction,
     Scheduler,
