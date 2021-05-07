@@ -167,8 +167,7 @@ class Birthday(Cog):
             )
             await ctx.send(embed=embed)
 
-    @birthday.command(name='set')
-    async def set_(self, ctx: Context, day: int, month: int):
+    async def _set_birthday(self, ctx: Context, member: Member, day: int, month: int):
         try:
             date = Date.convert_date(day=day, month=month)
         except ValueError:
@@ -180,7 +179,6 @@ class Birthday(Cog):
             await error.execute()
 
         else:
-            member = ctx.author
             member_config = self.config.member(member)
 
             member_data = MemberData(
@@ -192,9 +190,29 @@ class Birthday(Cog):
 
             embed = Embed(
                 title="Birthday Set",
-                description=f"Birthday set to {date}"
+                description=f"Birthday of {member} has been set to {date}"
             )
             await ctx.send(embed=embed)
+
+    @birthday.command(name='set')
+    async def set_(self, ctx: Context, day: int, month: int):
+        await self._set_birthday(ctx, ctx.author, day, month)
+
+    @admin()
+    @birthday.command()
+    async def forceset(self, ctx: Context, member_id, day: int, month: int):
+        try:
+            member = ctx.guild.get_member(member_id)
+            if member:
+                await self._set_birthday(ctx, member, day, month)
+            else:
+                raise InvalidArguments(
+                    ctx=ctx,
+                    title="Member Error",
+                    message="Couldn't find provided member"
+                )
+        except InvalidArguments as error:
+            await error.execute()
 
     @birthday.command()
     async def remove(self, ctx: Context):
