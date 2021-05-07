@@ -158,7 +158,7 @@ class Birthday(Cog):
             guild_config = self.config.guild(ctx.guild)
             guild_data = guild_config.get()
 
-            guild_data.channel = role.id
+            guild_data.role = role.id
             guild_config.set(guild_data)
 
             embed = Embed(
