@@ -12,8 +12,8 @@ from discord.ext.commands import command
 
 ##################### COGS ######################
 from Birthday import Birthday
-from CleanUp import CleanUp
-from EmojiData import EmojiData
+#from CleanUp import CleanUp
+#from EmojiData import EmojiData
 from EmojiManager import EmojiManager
 from Poll import Poll
 from RoleByReaction import RoleByReaction
@@ -36,8 +36,8 @@ from utils.exceptions import InvalidArguments
 COG_PATH = 'cogs.json'
 COGS = {
     Birthday,
-    CleanUp,
-    EmojiData,
+#    CleanUp,
+#    EmojiData,
     EmojiManager,
     Poll,
     RoleByReaction,
