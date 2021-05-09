@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Set,
     Tuple,
@@ -30,7 +31,7 @@ class ImprovedList(list):
     """
 
     def index(
-        self, v: Any, start: int = 0, stop: int = 9223372036854775807,
+        self, v: Any, *, start: int = 0, stop: int = 9223372036854775807,
         key: Callable = lambda x: x
     ) -> int:
         """Just like `list.index`, but admits a customizable key for
@@ -44,7 +45,7 @@ class ImprovedList(list):
         raise ValueError("Value not found")
 
     def get_item(
-        self, v: Any, start: int = 0, stop: int = 9223372036854775807,
+        self, v: Any, *, start: int = 0, stop: int = 9223372036854775807,
         key: Callable = lambda x: x
     ) -> Any:
         """Just like `list.__getitem__`, but admits a customizable key
@@ -53,12 +54,14 @@ class ImprovedList(list):
         """
         return self[self.index(v=v, start=start, stop=stop, key=key)]
 
+    def lexsort(self, key: Callable=None, reverse: bool=False):
+        """Same as `list.sort`, but applies lexical sort instead."""
+        self[:] = lexsorted(self, key=key, reverse=reverse)
+
 ############################################ FUNCTIONS ############################################
 
 def flatten(l: One_D_Iterable) -> list:
-    """Flattening generic method for various usages.
-
-    """
+    """Flattening generic method for various usages."""
     while any([isinstance(x, get_args(One_D_Iterable)) for x in l]):
         temp = []
         for x in l:
@@ -132,7 +135,19 @@ def isoftype(instance: Any, type_or_tuple: Type[Union[ExtendedType, Tuple[Extend
     # every other case if False
     return False
 
+def lexsorted(iterable: One_D_Iterable, *, key: Callable=None, reverse: bool=False):
+    """Roughly equivalent to `sorted`, but applies lexical sort instead."""
+    key_values = [key(x) if key else x for x in iterable]
+    order = sorted(
+        range(len(key_values)),
+        key=key_values.__getitem__,
+        reverse=reverse
+    )
+
+    return [iterable[i] for i in order]
+
 def revert_dict(d: Dict[Any, One_D_Iterable]) -> Dict[Any, Set[Any]]:
+    """Exchanges keys and values from provided `dict`."""
     if d:
         values = set.union(*(d.values()))
         return {v: {k for k, vs in d.items() if v in vs} for v in values}

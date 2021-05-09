@@ -40,6 +40,7 @@ from utils import (
     Config as Cfg,
     Group
 )
+from utils import lexsorted
 from utils.checks import (
     admin,
     can_give_role
@@ -246,26 +247,28 @@ class Birthday(Cog):
         guild = ctx.guild
         members_configs = self.config.all_members(guild)
 
-        # Dict[int, _Member]
+        # Dict[int, MemberData]
         members_data = {i: g.get() for i, g in members_configs.items()}
 
-        # List[Tuple[str and int and int]]
+        # List[MemberData]
         to_sort = []
         for member_id, member_data in members_data.items():
-            if not member_data.birthday: # None case
+            if not member_data.birthday: # None case -> skip
                 continue
 
             member = guild.get_member(member_id)
-            if member: # Member not found case
+            if member: # Member found case -> directly using their name
                 member_data.name = member.name
-            
-            to_sort.append(member_data.sorting_format())
+
+            to_sort.append(member_data)
 
         if to_sort:
-            # List[int]
-            order = np.lexsort(tuple(zip(*to_sort)))
+            # sorting lexicographically birthdays list for better readability
+            def key(m: MemberData): 
+                return (m.birthday.month, m.birthday.day, m.name)
+
             # List[MemberData]
-            sorted_birthdays = MemberData.from_order(to_sort, order)
+            sorted_birthdays = lexsorted(to_sort, key=key)
 
             message = "\n".join(str(member) for member in sorted_birthdays)
             embed = Embed(

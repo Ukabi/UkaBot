@@ -59,17 +59,3 @@ class Member(Objectify):
 
     def __str__(self) -> str:
         return f"{self.name} - {self.birthday}"
-
-    def sorting_format(self) -> Tuple[str and int and int]:
-        return (self.name, self.birthday.day, self.birthday.month)
-
-    @staticmethod
-    def from_order(members: List[Tuple[str and int and int]], order: List[int]) -> List["Member"]:
-        members = [members[i] for i in order]
-        return [Member(
-            birthday=Date(
-                day=member[1],
-                month=member[2]
-            ),
-            name=member[0]
-        ) for member in members]
