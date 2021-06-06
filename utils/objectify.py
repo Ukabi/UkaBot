@@ -115,6 +115,8 @@ class Objectify:
         for key, value in self.items():
             if isinstance(value, Objectify):
                 d[key] = value.copy()
+            elif isoftype(value, (List[Objectify], Tuple[Objectify])):
+                d[key] = [x.copy() for x in value]
             else:
                 d[key] = value
         return self.__class__(**d)

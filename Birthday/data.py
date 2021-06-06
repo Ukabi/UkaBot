@@ -40,9 +40,6 @@ class Date(Objectify):
 
     @staticmethod
     def convert_date(day: Union[int, str], month: Union[int, str]) -> "Date":
-        day = f"0{day}" if day < 10 else str(day)
-        month = f"0{month}" if month < 10 else str(month)
-
         date = time.strptime(f"{day} {month}", "%d %m")
         return Date(day=date.tm_mday, month=date.tm_mon)
 

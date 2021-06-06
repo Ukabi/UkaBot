@@ -152,8 +152,7 @@ class Config:
 
         path_to_folder, files = self._get_folder(*scopes)
 
-        paths = [f"{path_to_folder}/{file}" for file in files]
-        groups = [Group(path, defaults=defaults) for path in paths]
+        groups = [Group(f"{path_to_folder}/{file}", defaults=defaults) for file in files]
 
         files_without_extension = [file[:-len(self.EXTENSION)] for file in files]
         return {f: g for f, g in zip(files_without_extension, groups)}
@@ -196,8 +195,7 @@ class Config:
         path_to_folder = f"{self.cog}/{'/'.join(map(str, scopes))}"
 
         try:
-            files = os.listdir(path_to_folder)
-            files = [file for file in files if file.endswith(self.EXTENSION)]
+            files = [file for file in os.listdir(path_to_folder) if file.endswith(self.EXTENSION)]
         except FileNotFoundError:
             mkdir_p(path_to_folder)
             files = list()

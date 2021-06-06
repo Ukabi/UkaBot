@@ -70,16 +70,18 @@ class Birthday(Cog):
         self.config.defaults_member(self.defaults_member)
 
         self.on = True
-        self.bot.loop.create_task(self.scheduler())
-        print("BIRTHDAY_COG: Scheduler started.")
+        self.task = self.bot.loop.create_task(self.scheduler())
+        print("BIRTHDAY_COG: loaded")
 
     ########################################### UNLOADER ##########################################
 
     def cog_unload(self):
         self.on = False
+        self.task.cancel()
+        del self.task
         del self
 
-        print("BIRTHDAY_COG: Scheduler stopped.")
+        print("BIRTHDAY_COG: unloaded")
 
     ########################################## SCHEDULER ##########################################
 
@@ -270,7 +272,7 @@ class Birthday(Cog):
             # List[MemberData]
             sorted_birthdays = lexsorted(to_sort, key=key)
 
-            message = "\n".join(str(member) for member in sorted_birthdays)
+            message = "\n".join(map(str, sorted_birthdays))
             embed = Embed(
                 title="Birthdays List",
                 description=message
