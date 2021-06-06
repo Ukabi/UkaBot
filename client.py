@@ -17,7 +17,7 @@ from Birthday import Birthday
 #from EmojiManager import EmojiManager
 from Poll import Poll
 from RoleByReaction import RoleByReaction
-from Scheduler import Scheduler
+from Event import Event
 from Welcome import Welcome
 
 ##################### UTILS #####################
@@ -41,7 +41,7 @@ COGS = {
 #    EmojiManager,
     Poll,
     RoleByReaction,
-    Scheduler,
+    Event,
     Welcome
 }
 NAMES_COGS_MAP = {cog.__name__.lower(): cog for cog in COGS}

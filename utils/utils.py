@@ -1,8 +1,10 @@
 ############################################# IMPORTS #############################################
 
+from datetime import datetime as dt
 from typing import (
     _GenericAlias,
     Any,
+    Awaitable,
     Callable,
     Dict,
     Iterable,
@@ -16,6 +18,8 @@ from typing import (
     get_args,
     get_origin
 )
+
+import asyncio
 
 ############################################# GLOBALS #############################################
 
@@ -54,7 +58,7 @@ class ImprovedList(list):
         """
         return self[self.index(v=v, start=start, stop=stop, key=key)]
 
-    def lexsort(self, key: Callable=None, reverse: bool=False):
+    def lexsort(self, key: Callable = None, reverse: bool = False):
         """Same as `list.sort`, but applies lexical sort instead."""
         self[:] = lexsorted(self, key=key, reverse=reverse)
 
@@ -67,7 +71,7 @@ def flatten(l: One_D_Iterable) -> list:
         for x in l:
             temp += x if isinstance(x, get_args(One_D_Iterable)) else [x]
         l = temp
-    return list(l)
+    return l
 
 def isofclass(
     cls: ExtendedType, type_or_tuple: Type[Union[ExtendedType, Tuple[ExtendedType]]]
@@ -87,11 +91,9 @@ def isofclass(
     for type_ in types:
         # if both are typing classes
         if type(cls) == _GenericAlias and type(type_) == _GenericAlias:
-            (cls_args, cls_origin) = (get_args(cls), get_origin(cls))
-            (type_args, type_origin) = (get_args(type_), get_origin(type_))
-
             # cls and type_ have same base and same length
-            if cls_origin == type_origin and len(cls_args) == len(type_args):
+            if (cls_origin := get_origin(cls)) == (type_origin := get_origin(type_))\
+               and len(cls_args := get_args(cls)) == len(type_args := get_args(type_)):
                 for c_arg, t_arg in zip(cls_args, type_args):
                     # cls arguments are subclass of at least one type_ subclass, so True
                     if isofclass(c_arg, t_arg):
@@ -135,7 +137,7 @@ def isoftype(instance: Any, type_or_tuple: Type[Union[ExtendedType, Tuple[Extend
     # every other case if False
     return False
 
-def lexsorted(iterable: One_D_Iterable, *, key: Callable=None, reverse: bool=False):
+def lexsorted(iterable: One_D_Iterable, *, key: Callable = None, reverse: bool = False):
     """Roughly equivalent to `sorted`, but applies lexical sort instead."""
     key_values = [key(x) if key else x for x in iterable]
     order = sorted(
@@ -153,3 +155,12 @@ def revert_dict(d: Dict[Any, One_D_Iterable]) -> Dict[Any, Set[Any]]:
         return {v: {k for k, vs in d.items() if v in vs} for v in values}
     else:
         return {}
+
+############################################ AWAITABLES ###########################################
+
+async def call_at(loop, time: float, coro: Awaitable):
+    await call_later(loop, time - loop.time(), coro)
+
+async def call_later(loop, delay: float, coro: Awaitable):
+    await asyncio.sleep(delay)
+    await loop.create_task(coro)
