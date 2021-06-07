@@ -15,6 +15,7 @@ from Birthday import Birthday
 #from CleanUp import CleanUp
 #from EmojiData import EmojiData
 #from EmojiManager import EmojiManager
+from MessageByReaction import MessageByReaction
 from Poll import Poll
 from RoleByReaction import RoleByReaction
 from Event import Event
@@ -29,7 +30,7 @@ from utils import (
     load,
     write
 )
-from utils.checks import is_owner
+from utils.checks import is_bot_owner
 from utils.exceptions import InvalidArguments
 
 ############################################# GLOBAL ##############################################
@@ -40,6 +41,7 @@ COGS = {
 #    CleanUp,
 #    EmojiData,
 #    EmojiManager,
+    MessageByReaction,
     Poll,
     RoleByReaction,
     Event,
@@ -64,10 +66,18 @@ while not TOKEN:
         BOT_CONFIG['token'] = TOKEN
         write(CONFIG_PATH, BOT_CONFIG)
 
+OWNER = BOT_CONFIG.get('owner', None)
+while not OWNER:
+    OWNER = int(input('Enter bot owner id: '))
+    if OWNER:
+        BOT_CONFIG['owner'] = OWNER
+        write(CONFIG_PATH, BOT_CONFIG)
+
 intents = Intents.all()
 bot = Bot(
     command_prefix=PREFIX,
-    intents=intents
+    intents=intents,
+    owner_id=OWNER
 )
 
 ############################################ FUNCTIONS ############################################
@@ -142,12 +152,12 @@ async def on_ready():
 
 ############################################ COMMANDS #############################################
 
-@is_owner()
+@is_bot_owner()
 @bot.group(name='cog')
 async def cog_group(ctx: Context):
     pass
 
-@is_owner()
+@is_bot_owner()
 @cog_group.command(name='load')
 async def cog_load(ctx: Context, *, cog_names: str):
     loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
@@ -180,7 +190,7 @@ async def cog_load(ctx: Context, *, cog_names: str):
 
         await ctx.send(f'Successfully loaded {", ".join(cog_names)}')
 
-@is_owner()
+@is_bot_owner()
 @cog_group.command(name='unload')
 async def cog_unload(ctx: Context, *, cog_names: str):
     loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
@@ -217,7 +227,7 @@ async def cog_unload(ctx: Context, *, cog_names: str):
 
         await ctx.send(f'Successfully unloaded {", ".join(cog_names)}')
 
-@is_owner()
+@is_bot_owner()
 @cog_group.command(name='list')
 async def cog_list(ctx: Context):
     cog_names = sorted({name.lower() for name in bot.cogs.keys()})
@@ -225,7 +235,7 @@ async def cog_list(ctx: Context):
 
     await ctx.send(message)
 
-@is_owner()
+@is_bot_owner()
 @bot.command(name='commands')
 async def bot_commands(ctx: Context):
     command_names = [f"{c.full_parent_name} {c.name}" for c in get_commands(bot)]
