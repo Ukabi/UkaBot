@@ -1,5 +1,9 @@
 ############################################# IMPORTS #############################################
+#################### DISCORD ####################
+from discord import Message
+from discord.ext.commands import Context
 
+##################### UTILS #####################
 from datetime import datetime as dt
 from typing import (
     _GenericAlias,
@@ -157,6 +161,32 @@ def revert_dict(d: Dict[Any, One_D_Iterable]) -> Dict[Any, Set[Any]]:
         return {}
 
 ############################################ AWAITABLES ###########################################
+
+async def add_reactions(ctx: Context, message: Message, emojis: List[Union[int, str]]):
+    for emoji in emojis:
+        try: # `Emoji` case
+            emoji = ImprovedList(ctx.bot.emojis).get_item(
+                emoji,
+                key=lambda e: e.id
+            )
+
+        except ValueError:
+            try: # unicode case
+                await message.add_reaction(str(emoji))
+            except:
+                print((
+                    f"{ctx.cog.__name__.upper()}_COG: couldn't react"
+                    f"with {emoji} on {message.jump_url}. Reason: ERROR"
+                ))
+
+        else:
+            if emoji.is_usable():
+                await message.add_reaction(emoji)
+            else:
+                print((
+                    f"{ctx.cog.__name__.upper()}_COG: couldn't react"
+                    f"with {emoji} on {message.jump_url}. Reason: NOT USABLE"
+                ))
 
 async def call_at(loop, time: float, coro: Awaitable):
     await call_later(loop, time - loop.time(), coro)

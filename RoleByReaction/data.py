@@ -11,11 +11,6 @@ from typing import (
 )
 from utils.objectify import Objectify
 
-############################################# GLOBALS #############################################
-
-EmojiType = Union[int, str, Emoji]
-RoleType = Union[int, str, Role]
-
 ############################################# CLASSES #############################################
 
 class Combination(Objectify):

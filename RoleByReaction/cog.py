@@ -3,7 +3,6 @@
 #################### DISCORD ####################
 from discord import (
     Embed,
-    Emoji,
     Guild,
     Message,
     Member,
@@ -13,12 +12,9 @@ from discord import (
 )
 from discord import NotFound
 from discord.ext.commands import (
-    BadArgument,
     Bot,
     Cog,
-    Context,
-    EmojiConverter,
-    RoleConverter
+    Context
 )
 from discord.ext.commands import group
 
@@ -26,10 +22,6 @@ from discord.ext.commands import group
 from .data import (
     Combination,
     Guild as GuildData
-)
-from .data import (
-    EmojiType,
-    RoleType
 )
 
 ##################### UTILS #####################
@@ -43,9 +35,15 @@ from typing import (
 )
 from utils import (
     Config as Cfg,
-    ImprovedList
+    EmojiType,
+    ImprovedList,
+    RoleType
 )
-from utils import revert_dict
+from utils import (
+    import_emoji,
+    import_role,
+    revert_dict
+)
 from utils.checks import (
     admin,
     admin_or_permissions,
@@ -123,7 +121,7 @@ class RoleByReaction(Cog):
 
         guild_data.title = title
         try:
-            await self._edit_rbr_message(ctx, guild_data)
+            await self._edit_message(ctx, guild_data)
         except InvalidArguments:
             pass
 
@@ -145,7 +143,7 @@ class RoleByReaction(Cog):
         combinations = guild_data.combinations
 
         try:
-            emoji = await self.import_emoji(ctx, emoji)
+            emoji = await import_emoji(ctx, emoji)
             if emoji in [c.emoji for c in combinations]:
                 raise InvalidArguments(
                     ctx=ctx,
@@ -153,7 +151,7 @@ class RoleByReaction(Cog):
                     message=f"Role {role} already used"
                 )
 
-            role = await self.import_role(ctx, role)
+            role = await import_role(ctx, role)
             if role.id in [c.role for c in combinations]:
                 raise InvalidArguments(
                     ctx=ctx,
@@ -179,7 +177,7 @@ class RoleByReaction(Cog):
 
             guild_data.combinations = combinations
             try:
-                await self._edit_rbr_message(ctx, guild_data)
+                await self._edit_message(ctx, guild_data)
             except InvalidArguments:
                 pass
 
@@ -209,12 +207,12 @@ class RoleByReaction(Cog):
                 )
 
             try:
-                element = await self.import_emoji(ctx, element)
+                element = await import_emoji(ctx, element)
                 element = element.id if hasattr(element, "id") else element
                 var = "emoji"
             except InvalidArguments:
                 try:
-                    role = await self.import_role(ctx, element)
+                    role = await import_role(ctx, element)
                     element = role.id
                     var = "role"
                 except InvalidArguments:
@@ -239,13 +237,13 @@ class RoleByReaction(Cog):
 
             guild_data.combinations = combinations
             try:
-                await self._edit_rbr_message(ctx, guild_data)
+                await self._edit_message(ctx, guild_data)
             except InvalidArguments:
                 pass
 
             guild_config.set(guild_data)
 
-            emoji = await self.import_emoji(ctx, combination.emoji)
+            emoji = await import_emoji(ctx, combination.emoji)
             role = guild.get_role(combination.role)
 
             embed = Embed(
@@ -261,7 +259,7 @@ class RoleByReaction(Cog):
         guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
 
-        embed = self._rbr_message_content(guild, guild_data)
+        embed = self._message_content(guild, guild_data)
         message = await ctx.send(embed=embed)
         await self._add_reactions(
             ctx=ctx,
@@ -283,7 +281,7 @@ class RoleByReaction(Cog):
         guild_data.channel = channel_id
         guild_data.message = message_id
         try:
-            message = await self._edit_rbr_message(ctx, guild_data)
+            message = await self._edit_message(ctx, guild_data)
         except InvalidArguments as error:
             await error.execute()
 
@@ -305,7 +303,7 @@ class RoleByReaction(Cog):
 
         guild_data.title = "Role By Reaction Template"
 
-        embed = self._rbr_message_content(guild, guild_data)
+        embed = self._message_content(guild, guild_data)
         await ctx.send(embed=embed)
 
     @admin()
@@ -335,7 +333,7 @@ class RoleByReaction(Cog):
         guild_data = guild_config.get()
 
         try:
-            await self._edit_rbr_message(ctx, guild_data)
+            await self._edit_message(ctx, guild_data)
         except InvalidArguments as error:
             await error.execute()
 
@@ -357,15 +355,15 @@ class RoleByReaction(Cog):
                     print(f"ROLEBYREACTION_COG: couldn't react with {emoji} on {message.jump_url}")
 
     @classmethod
-    async def _edit_rbr_message(cls, ctx: Context, guild_data: GuildData) -> Message:
+    async def _edit_message(cls, ctx: Context, guild_data: GuildData) -> Message:
         guild = ctx.guild
         channel_id = guild_data.channel
         message_id = guild_data.message
         combinations = guild_data.combinations
 
-        message = await cls._find_rbr_message(guild, guild_data, ctx)
+        message = await cls._find_message(guild, guild_data, ctx)
         if message.author.id == ctx.me.id:
-            embed = cls._rbr_message_content(guild, guild_data)
+            embed = cls._message_content(guild, guild_data)
             await message.edit(embed=embed)
             await cls._add_reactions(
                 ctx=ctx,
@@ -384,7 +382,7 @@ class RoleByReaction(Cog):
     @classmethod
     async def _treat_guild(cls, guild: Guild, guild_data: GuildData):
         try:
-            message = await cls._find_rbr_message(guild, guild_data)
+            message = await cls._find_message(guild, guild_data)
         except InvalidArguments: # message not found
             pass
 
@@ -452,7 +450,7 @@ class RoleByReaction(Cog):
             await member.remove_roles(*roles)
 
     @staticmethod
-    async def _find_rbr_message(guild: Guild, guild_data: GuildData, ctx: Context=None) -> Message:
+    async def _find_message(guild: Guild, guild_data: GuildData, ctx: Context=None) -> Message:
         channel_id = guild_data.channel
         message_id = guild_data.message
 
@@ -529,7 +527,7 @@ class RoleByReaction(Cog):
         return revert_dict(state_by_role)
 
     @staticmethod
-    def _rbr_message_content(guild: Guild, guild_data: GuildData) -> Embed:
+    def _message_content(guild: Guild, guild_data: GuildData) -> Embed:
         title = guild_data.title
         combinations = guild_data.combinations
 
@@ -558,34 +556,3 @@ class RoleByReaction(Cog):
             title=title,
             description=content
         )
-
-    @staticmethod
-    async def import_emoji(ctx: Context, emoji: EmojiType) -> Union[str, Emoji]:
-        emoji = str(emoji)
-
-        try:
-            emoji = await EmojiConverter().convert(ctx, emoji)
-        except BadArgument:
-            temp = demojize(emoji)
-            if any([emoji == temp,               # Not an emoji
-                    temp.count(":") != 2,        # More or less than an emoji
-                    not temp.startswith(":"),    # More than an emoji
-                    not temp.endswith(":")]):    # More than an emoji
-                raise InvalidArguments(
-                    ctx=ctx,
-                    title="Emoji Error",
-                    message=f"Couldn't load {emoji} emoji"
-                )
-
-        return emoji
-
-    @staticmethod
-    async def import_role(ctx: Context, role: RoleType) -> Role:
-        try:
-            return await RoleConverter().convert(ctx, str(role))
-        except BadArgument:
-            raise InvalidArguments(
-                ctx=ctx,
-                title="Role Error",
-                message=f"Couldn't load {role} role"
-            )
