@@ -216,7 +216,8 @@ class Event(Cog):
     @admin_or_permissions(manage_roles=True)
     @event.command()
     async def remove(self, ctx: Context, title: str, time: str = None):
-        guild_config = self.config.guild(ctx.guild)
+        guild = ctx.guild
+        guild_config = self.config.guild(guild)
         guild_data = guild_config.get()
 
         matches = [e for e in guild_data.events if e.title.lower() == title.lower()]
@@ -252,12 +253,19 @@ class Event(Cog):
 
             guild_config.set(guild_data)
 
+            def convert(p: int):
+                ret = guild.get_member(p)
+                if not ret:
+                    ret = guild.get_role(p)
+                return ret
+            participants = [c for p in match.participants if (c := convert(p))]
+
             embed = Embed(
                 title="Event Removed",
                 description=(
                     f"Title: {match.title}" + "\n"
                     f"Date: {match.datetime()}" + "\n"
-                    f"Participants: {' '.join(map(lambda p: p.mention, match.participants))}"
+                    f"Participants: {' '.join(map(lambda p: p.mention, participants))}"
                 )
             )
             await ctx.send(embed=embed)

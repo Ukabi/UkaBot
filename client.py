@@ -29,6 +29,7 @@ from utils import (
     load,
     write
 )
+from utils.checks import is_owner
 from utils.exceptions import InvalidArguments
 
 ############################################# GLOBAL ##############################################
@@ -141,10 +142,12 @@ async def on_ready():
 
 ############################################ COMMANDS #############################################
 
+@is_owner()
 @bot.group(name='cog')
 async def cog_group(ctx: Context):
     pass
 
+@is_owner()
 @cog_group.command(name='load')
 async def cog_load(ctx: Context, *, cog_names: str):
     loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
@@ -177,6 +180,7 @@ async def cog_load(ctx: Context, *, cog_names: str):
 
         await ctx.send(f'Successfully loaded {", ".join(cog_names)}')
 
+@is_owner()
 @cog_group.command(name='unload')
 async def cog_unload(ctx: Context, *, cog_names: str):
     loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
@@ -213,6 +217,7 @@ async def cog_unload(ctx: Context, *, cog_names: str):
 
         await ctx.send(f'Successfully unloaded {", ".join(cog_names)}')
 
+@is_owner()
 @cog_group.command(name='list')
 async def cog_list(ctx: Context):
     cog_names = sorted({name.lower() for name in bot.cogs.keys()})
@@ -220,6 +225,7 @@ async def cog_list(ctx: Context):
 
     await ctx.send(message)
 
+@is_owner()
 @bot.command(name='commands')
 async def bot_commands(ctx: Context):
     command_names = [f"{c.full_parent_name} {c.name}" for c in get_commands(bot)]
