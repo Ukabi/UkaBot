@@ -34,11 +34,13 @@ from utils import (
     ImprovedList
 )
 from utils import lexsorted
+from utils.checks import admin_or_permissions
 from utils.exceptions import InvalidArguments
 
 import time
 
 ############################################### COGS ##############################################
+
 
 class Event(Cog):
 
@@ -55,11 +57,11 @@ class Event(Cog):
         self.on = True
         self.tasks = []
         self.bot.loop.create_task(self.scheduler())
-        print(type(self.bot.loop))
+
         print("EVENT_COG: loaded")
 
     ########################################### UNLOADER ##########################################
-    
+
     def cog_unload(self):
         self.on = False
         for t in self.tasks:
@@ -83,10 +85,12 @@ class Event(Cog):
 
     ######################################## EVENT COMMANDS #######################################
 
+    @admin_or_permissions(manage_roles=True)
     @group()
     async def event(self, ctx: Context):
         pass
 
+    @admin_or_permissions(manage_roles=True)
     @event.command()
     async def add(
         self, ctx: Context, channel: Union[int, str, TextChannel], time: str,
@@ -121,7 +125,7 @@ class Event(Cog):
                 channel = await TextChannelConverter().convert(ctx, str(channel))
                 channel_id = channel.id
             except BadArgument:
-                try: # keeping 0 value as a no-announcement-channel criterium
+                try:  # keeping 0 value as a no-announcement-channel criterium
                     channel_id = int(channel)
                     if channel_id:
                         raise ValueError
@@ -176,11 +180,12 @@ class Event(Cog):
         except InvalidArguments as error:
             await error.execute()
 
+    @admin_or_permissions(manage_roles=True)
     @event.command(name="list")
     async def list_(self, ctx: Context):
         guild = ctx.guild
         guild_config = self.config.guild(guild)
-        guild_data= guild_config.get()
+        guild_data = guild_config.get()
 
         events = [e for e in guild_data.events if not e.elapsed()]
         events = lexsorted(events, key=lambda e: (e.date, e.title))
@@ -208,6 +213,7 @@ class Event(Cog):
         )
         await ctx.send(embed=embed)
 
+    @admin_or_permissions(manage_roles=True)
     @event.command()
     async def remove(self, ctx: Context, title: str, time: str = None):
         guild_config = self.config.guild(ctx.guild)
@@ -222,12 +228,19 @@ class Event(Cog):
                     message="Couldn't find event with provided name"
                 )
             elif len(matches) > 1:
-                matches = [e for e in matches if str(e.date) == time]
-                if not matches:
+                if time:
+                    matches = [e for e in matches if e.datetime() == EventData.convert(time)]
+                    if not matches:
+                        raise InvalidArguments(
+                            ctx=ctx,
+                            title="Date Error",
+                            message="Couldn't find event with provided date"
+                        )
+                else:
                     raise InvalidArguments(
                         ctx=ctx,
                         title="Date Error",
-                        message="Couldn't find event with provided date"
+                        message="There are multiple events with same name, please provide a date"
                     )
 
         except InvalidArguments as error:
@@ -241,7 +254,11 @@ class Event(Cog):
 
             embed = Embed(
                 title="Event Removed",
-                description=match.datetime()
+                description=(
+                    f"Title: {match.title}" + "\n"
+                    f"Date: {match.datetime()}" + "\n"
+                    f"Participants: {' '.join(map(lambda p: p.mention, match.participants))}"
+                )
             )
             await ctx.send(embed=embed)
 

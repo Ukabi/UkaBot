@@ -7,11 +7,6 @@ from typing import List
 
 ############################################# GLOBALS #############################################
 
-MONTHS = [
-    "Jan", "Feb", "Mar", "Apr",
-    "May", "Jun", "Jul", "Aug",
-    "Sep", "Oct", "Nov", "Dec"
-]
 DATETIME_FORMAT = "%Y-%m-%d_%H:%M:%S"
 
 ############################################# CLASSES #############################################
@@ -25,15 +20,16 @@ class Event(Objectify):
     def __init__(self, channel: int, date: float, participants: List[int], title: str):
         super().__init__(channel=channel, date=date, participants=participants, title=title)
 
-    def __eq__(self, event: "Event") -> bool:
-        return event.date == self.date and event.title == self.title
-
     def __str__(self) -> str:
         return f"{self.date} - {self.title}"
 
+    @classmethod
+    def timestamp(cls, date: str) -> float:
+        return cls.convert(date).timestamp()
+
     @staticmethod
-    def timestamp(date: str) -> float:
-        return dt.strptime(date, DATETIME_FORMAT).timestamp()
+    def convert(date: str) -> dt:
+        return dt.strptime(date, DATETIME_FORMAT)
 
     def datetime(self) -> dt:
         return dt.fromtimestamp(self.date)
