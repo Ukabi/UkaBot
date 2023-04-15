@@ -17,7 +17,10 @@ from .data import (
 
 ##################### UTILS #####################
 from typing import List
-from utils import Config as Cfg
+from utils import (
+    Config as Cfg,
+    ImprovedList
+)
 from utils.checks import admin_or_permissions
 
 
@@ -88,3 +91,24 @@ class Ravachol(Cog):
         )
         guild_data.events.append(event)
         guild_config.set(guild_data)
+
+    @admin_or_permissions()
+    @rava_group.command(name='remove')
+    async def rava_remove(self, ctx: Context, *, trigger: str):
+        guild = ctx.guild
+        if not guild:
+            return  # might implement proper error reply
+
+        guild_config = self.config.guild(guild)
+        guild_data = guild_config.get()
+
+        events = ImprovedList(guild_data.events)
+        try:
+            events.remove(trigger, key=lambda e: e.trigger)
+        except ValueError:
+            return  # might implement proper error reply
+
+        guild_data.events = events
+        guild_config.set(guild_data)
+
+        await ctx.message.add_reaction('✅')
