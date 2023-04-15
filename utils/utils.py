@@ -28,6 +28,7 @@ One_D_Iterable = Union[list, tuple, set, frozenset]
 
 ############################################# CLASSES #############################################
 
+
 class ImprovedList(list):
     """Some useful functions to explore or transform list content
     more easily.
@@ -57,12 +58,16 @@ class ImprovedList(list):
 
         """
         return self[self.index(v=v, start=start, stop=stop, key=key)]
+    
+    def remove(self, v: Any, key: Callable = lambda x: x):
+        super().remove(self.get_item(v, key=key))
 
     def lexsort(self, key: Callable = None, reverse: bool = False):
         """Same as `list.sort`, but applies lexical sort instead."""
         self[:] = lexsorted(self, key=key, reverse=reverse)
 
 ############################################ FUNCTIONS ############################################
+
 
 def flatten(l: One_D_Iterable) -> list:
     """Flattening generic method for various usages."""
@@ -72,6 +77,7 @@ def flatten(l: One_D_Iterable) -> list:
             temp += x if isinstance(x, get_args(One_D_Iterable)) else [x]
         l = temp
     return l
+
 
 def isofclass(
     cls: ExtendedType, type_or_tuple: Type[Union[ExtendedType, Tuple[ExtendedType]]]
@@ -108,6 +114,7 @@ def isofclass(
     # every other case if False
     return False
 
+
 def isoftype(instance: Any, type_or_tuple: Type[Union[ExtendedType, Tuple[ExtendedType]]]) -> bool:
     """An alternative of the `isinstance` function which
     works with any `typing._GenericAlias` type.
@@ -137,6 +144,7 @@ def isoftype(instance: Any, type_or_tuple: Type[Union[ExtendedType, Tuple[Extend
     # every other case if False
     return False
 
+
 def lexsorted(iterable: One_D_Iterable, *, key: Callable = None, reverse: bool = False):
     """Roughly equivalent to `sorted`, but applies lexical sort instead."""
     key_values = [key(x) if key else x for x in iterable]
@@ -148,6 +156,7 @@ def lexsorted(iterable: One_D_Iterable, *, key: Callable = None, reverse: bool =
 
     return [iterable[i] for i in order]
 
+
 def revert_dict(d: Dict[Any, One_D_Iterable]) -> Dict[Any, Set[Any]]:
     """Exchanges keys and values from provided `dict`."""
     if d:
@@ -158,8 +167,10 @@ def revert_dict(d: Dict[Any, One_D_Iterable]) -> Dict[Any, Set[Any]]:
 
 ############################################ AWAITABLES ###########################################
 
+
 async def call_at(loop, time: float, coro: Awaitable):
     await call_later(loop, time - loop.time(), coro)
+
 
 async def call_later(loop, delay: float, coro: Awaitable):
     await asyncio.sleep(delay)
