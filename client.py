@@ -16,6 +16,7 @@ from Birthday import Birthday
 #from EmojiData import EmojiData
 #from EmojiManager import EmojiManager
 from Poll import Poll
+from Ravachol import Ravachol
 from RoleByReaction import RoleByReaction
 from Event import Event
 from Welcome import Welcome
@@ -37,10 +38,11 @@ from utils.exceptions import InvalidArguments
 COG_PATH = 'cogs.json'
 COGS = {
     Birthday,
-#    CleanUp,
-#    EmojiData,
-#    EmojiManager,
+    #    CleanUp,
+    #    EmojiData,
+    #    EmojiManager,
     Poll,
+    Ravachol,
     RoleByReaction,
     Event,
     Welcome
