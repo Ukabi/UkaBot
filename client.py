@@ -74,7 +74,8 @@ bot = Bot(
 
 ############################################ FUNCTIONS ############################################
 
-def load_cogs(client: Bot, cogs: List[Cog]):
+
+async def load_cogs(client: Bot, cogs: List[Cog]):
     """Loads cogs on client.
 
     Parameters
@@ -86,9 +87,10 @@ def load_cogs(client: Bot, cogs: List[Cog]):
     """
     for cog in cogs:
         cog = cog(client)
-        client.add_cog(cog)
+        await client.add_cog(cog)
 
-def unload_cogs(client: Bot, cogs: List[Cog]):
+
+async def unload_cogs(client: Bot, cogs: List[Cog]):
     """Unloads cogs from client.
 
     Parameters
@@ -99,7 +101,8 @@ def unload_cogs(client: Bot, cogs: List[Cog]):
 
     """
     for cog in cogs:
-        client.remove_cog(cog.__name__)
+        await client.remove_cog(cog.__name__)
+
 
 def get_commands(instance: Union[Bot, Group]) -> List[command]:
     """Gets loaded commands from client.
@@ -107,7 +110,7 @@ def get_commands(instance: Union[Bot, Group]) -> List[command]:
     Parameters
         instance: `Union[Bot, Group]`
             The instance to look for commands in
-    
+
     Returns
         `List[command]`
             The `list` of `command` loaded on client
@@ -123,14 +126,15 @@ def get_commands(instance: Union[Bot, Group]) -> List[command]:
 
 ############################################# EVENTS ##############################################
 
+
 @bot.event
 async def on_ready():
-    """This runs when bot has done logging in and setting up.
+    """This runs when bot has done logging in and setting up."""
 
-    """
     cog_names_to_load = load(COG_PATH, if_error=[])
     cogs_to_load = {NAMES_COGS_MAP[cog_name] for cog_name in cog_names_to_load}
-    load_cogs(bot, cogs_to_load)
+
+    await load_cogs(bot, cogs_to_load)
 
     loaded_cogs_names = sorted({name.lower() for name in bot.cogs.keys()})
 
@@ -144,10 +148,12 @@ async def on_ready():
 
 ############################################ COMMANDS #############################################
 
+
 @is_owner()
 @bot.group(name='cog')
 async def cog_group(ctx: Context):
     pass
+
 
 @is_owner()
 @cog_group.command(name='load')
@@ -177,10 +183,11 @@ async def cog_load(ctx: Context, *, cog_names: str):
         await error.execute()
 
     else:
-        load_cogs(bot, to_load)
+        await load_cogs(bot, to_load)
         write(COG_PATH, [name.lower() for name in bot.cogs.keys()])
 
         await ctx.send(f'Successfully loaded {", ".join(cog_names)}')
+
 
 @is_owner()
 @cog_group.command(name='unload')
@@ -212,12 +219,13 @@ async def cog_unload(ctx: Context, *, cog_names: str):
         await error.execute()
 
     else:
-        unload_cogs(bot, to_unload)
+        await unload_cogs(bot, to_unload)
 
         loaded_cog_names = {name.lower() for name in bot.cogs.keys()}
         write(COG_PATH, [cog_name for cog_name in loaded_cog_names if cog_name not in cog_names])
 
         await ctx.send(f'Successfully unloaded {", ".join(cog_names)}')
+
 
 @is_owner()
 @cog_group.command(name='list')
@@ -226,6 +234,7 @@ async def cog_list(ctx: Context):
     message = ", ".join(cog_names) if cog_names else "No cog loaded"
 
     await ctx.send(message)
+
 
 @is_owner()
 @bot.command(name='commands')
