@@ -3,6 +3,12 @@
 
 ################# CONFIG FILES ##################
 *.json
+globals
+channel
+guild
+member
+role
+user
 
 ################## TEST FILES ###################
 *test*.py
