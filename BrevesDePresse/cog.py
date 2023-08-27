@@ -16,6 +16,7 @@ from discord.ext.commands import group
 from .data import Guild as GuildData
 
 ##################### UTILS #####################
+import asyncio
 from utils import Config as Cfg
 from utils.checks import admin_or_permissions
 
@@ -45,7 +46,20 @@ class BrevesDePresse(Cog):
             return
 
         if message_post: # message post case
-            await message.create_thread(name=message.content)
+            thread = await message.create_thread(
+                name=message.content[:100], # limiting name size to avoid being prohibited
+                auto_archive_duration=60
+            )
+
+            await asyncio.sleep(2) # waiting for (optional) embed to properly prompt
+
+            if (embeds := message.embeds):
+                embed = embeds[0]
+
+                # condensing title and description in case of title is empty
+                name = f"{embed.title}{embed.description}"[:100] # same size limitation here
+                if name:
+                    await thread.edit(name=name)
 
         else: # message delete case
             thread = guild.get_channel_or_thread(message.id)
