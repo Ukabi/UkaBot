@@ -46,20 +46,16 @@ class BrevesDePresse(Cog):
             return
 
         if message_post: # message post case
-            thread = await message.create_thread(
-                name=message.content[:100], # limiting name size to avoid being prohibited
-                auto_archive_duration=60
-            )
-
-            await asyncio.sleep(2) # waiting for (optional) embed to properly prompt
-
             if (embeds := message.embeds):
                 embed = embeds[0]
+                name = f"{embed.title}{embed.description}"
+            else:
+                name = message.content
 
-                # condensing title and description in case of title is empty
-                name = f"{embed.title}{embed.description}"[:100] # same size limitation here
-                if name:
-                    await thread.edit(name=name)
+            thread = await message.create_thread(
+                name=name[:100], # limiting name size to avoid being prohibited
+                auto_archive_duration=60 # limiting visibility to one hour
+            )
 
         else: # message delete case
             thread = guild.get_channel_or_thread(message.id)
