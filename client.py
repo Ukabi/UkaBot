@@ -11,6 +11,7 @@ from discord.ext.commands import (
 from discord.ext.commands import command
 
 ##################### COGS ######################
+from BrevesDePresse import BrevesDePresse
 from Ravachol import Ravachol
 
 ##################### UTILS #####################
@@ -28,7 +29,10 @@ from utils.exceptions import InvalidArguments
 ############################################# GLOBAL ##############################################
 
 COG_PATH = 'cogs.json'
-COGS = {Ravachol}
+COGS = {
+    Ravachol,
+    BrevesDePresse
+}
 NAMES_COGS_MAP = {cog.__name__.lower(): cog for cog in COGS}
 
 CONFIG_PATH = 'config.json'
