@@ -52,7 +52,9 @@ while not TOKEN:
         BOT_CONFIG['token'] = TOKEN
         write(CONFIG_PATH, BOT_CONFIG)
 
-intents = Intents.all()
+intents = Intents.default()
+intents.message_content = True
+
 bot = Bot(
     command_prefix=PREFIX,
     intents=intents

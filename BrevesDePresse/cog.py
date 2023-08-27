@@ -3,8 +3,7 @@
 #################### DISCORD ####################
 from discord import (
     Message,
-    TextChannel,
-    Thread
+    TextChannel
 )
 from discord.ext.commands import (
     Bot,
@@ -17,7 +16,6 @@ from discord.ext.commands import group
 from .data import Guild as GuildData
 
 ##################### UTILS #####################
-from typing import List
 from utils import Config as Cfg
 from utils.checks import admin_or_permissions
 
@@ -40,9 +38,12 @@ class BrevesDePresse(Cog):
     async def treat_message(self, message: Message, *, message_post: bool):
         guild = message.guild
 
-        if message.channel.id != (filter_channel := self.config.guild(guild).get().channel):
+        if message.channel.id != (filter_ := self.config.guild(guild).get().channel):
             return
         
+        if message.author.bot:
+            return
+
         if message_post: # message post case
             await message.create_thread(name=message.content)
 
