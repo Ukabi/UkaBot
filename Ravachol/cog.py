@@ -37,11 +37,6 @@ class Ravachol(Cog):
         self.default_guild = GuildData(events=[])
         self.config.defaults_guild(self.default_guild)
 
-    ########################################### UNLOADER ##########################################
-
-    def cog_unload(self):
-        del self
-
     ############################################ EVENTS ###########################################
 
     async def treat_message(self, message: Message):
