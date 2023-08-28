@@ -10,6 +10,9 @@ Un bot anarchiste pour le Discord de OstPolitik.
 
 ## Maintenance
 Modèles typiques de commande :
+
 `[p]rava add [fréquence] [trigger] [réponse] | (réponse 2) | (réponse 3) | ...`
+
 `[p]rava remove [trigger]`
+
 `[p]bdp channel [#channel]`
