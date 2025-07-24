@@ -13,6 +13,7 @@ from discord.ext.commands import command
 ##################### COGS ######################
 from BrevesDePresse import BrevesDePresse
 from Ravachol import Ravachol
+from Sondage import Sondage
 
 ##################### UTILS #####################
 from typing import (
@@ -30,8 +31,9 @@ from utils.exceptions import InvalidArguments
 
 COG_PATH = 'cogs.json'
 COGS = {
+    BrevesDePresse,
     Ravachol,
-    BrevesDePresse
+    Sondage
 }
 NAMES_COGS_MAP = {cog.__name__.lower(): cog for cog in COGS}
 
