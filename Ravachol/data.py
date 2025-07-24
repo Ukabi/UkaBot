@@ -23,7 +23,7 @@ class Event(Objectify):
         user_id = message.author.id
         bot_id = bot.user.id
 
-        if user_id != bot_id and self.trigger in message.content:
+        if user_id != bot_id and self.trigger.lower() in message.content.lower():
             return self.frequency == 1 or self.frequency - random.random() > 0
         return False
 
