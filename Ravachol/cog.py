@@ -87,6 +87,8 @@ class Ravachol(Cog):
         guild_data.events.append(event)
         guild_config.set(guild_data)
 
+        await ctx.message.add_reaction('✅')
+
     @admin_or_permissions()
     @rava_group.command(name='remove')
     async def rava_remove(self, ctx: Context, *, trigger: str):
