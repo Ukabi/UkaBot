@@ -39,31 +39,40 @@ class Sondage(Cog):
     async def treat_message(self, message: Message, *, message_post: bool):
         guild = message.guild
 
-        if message.channel.id not in (config := self.config.guild(guild).get()).channels:
+        if not guild:
             return
         
         if message.author.bot:
             return
-
-        if message_post and (poll := message.poll):
-            thread = await message.create_thread(
-                name=p if (p := poll.question[:100]) else "No Title"
-            )
         
-        elif message_post and not poll:
-            dm = await message.author.create_dm()
-            await dm.send(
-                f"Seuls les sondages sont autorisés sur le cannal {message.channel}.\n"
-                "Veuillez discuter sur un des fils dédiés."
-            )
+        if message.channel.id not in (config := self.config.guild(guild).get()).channels:
+            return
+        
+        if message.type.name == 'unknown_46':
+            return
+        
+        if message_post:
+            poll = message.poll
 
-            log = guild.get_channel(config.log)
-            m = f"Sondage - Message de {message.author} supprimé dans {message.channel}."
-            if log:
-                await log.send(m)
-            print(m)
+            if poll:
+                thread = await message.create_thread(
+                    name=p if (p := poll.question[:100]) else "No Title"
+                )
+            
+            else:
+                dm = await message.author.create_dm()
+                await dm.send(
+                    f"Seuls les sondages sont autorisés sur le cannal {message.channel}.\n"
+                    "Veuillez discuter sur un des fils dédiés."
+                )
 
-            await message.delete()
+                log = guild.get_channel(config.log)
+                m = f"Sondage - Message de {message.author} supprimé dans {message.channel}."
+                if log:
+                    await log.send(m)
+                print(m)
+
+                await message.delete()
 
         else: # message delete case
             thread = guild.get_channel_or_thread(message.id)
