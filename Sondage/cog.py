@@ -3,7 +3,8 @@
 #################### DISCORD ####################
 from discord import (
     Message,
-    TextChannel
+    TextChannel,
+    MessageType
 )
 from discord.ext.commands import (
     Bot,
@@ -48,7 +49,7 @@ class Sondage(Cog):
         if message.channel.id not in (config := self.config.guild(guild).get()).channels:
             return
         
-        if message.type.name == 'unknown_46':
+        if message.type == MessageType.poll_result:
             return
         
         if message_post:
